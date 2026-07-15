@@ -2,26 +2,52 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
 
-// إعداد سعة نقل البيانات لاستقبال الصور الكبيرة والمذكرات الصوتية بدون مشاكل
 const io = new Server(server, {
   maxHttpBufferSize: 1e7, // 10 ميجابايت
   cors: { origin: "*" }
 });
 
-// تشغيل الملفات الساكنة (ستضع ملف الـ HTML في مجلد اسمه public)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// تخزين قائمة المستخدمين النشطين في الذاكرة
+// 🔌 1. الاتصال بقاعدة بيانات MongoDB (يمكنك استبدال الرابط برابط سحابي لاحقاً)
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yemen_chat_db';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
+  .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
+
+// 📝 2. هيكلة نموذج الرسائل لحفظها في قاعدة البيانات
+const MessageSchema = new mongoose.Schema({
+  type: String,     // text, image, voice
+  name: String,
+  role: String,
+  avatar: String,
+  color: String,
+  text: String,
+  imageSrc: String,
+  timestamp: { type: Date, default: Date.now }
+});
+const Message = mongoose.model('Message', MessageSchema);
+
 let activeUsers = {};
 
-io.on('connection', (socket) => {
-  console.log('مستخدم جديد اتصل بالخادم:', socket.id);
+io.on('connection', async (socket) => {
+  console.log('مستخدم جديد اتصل بالسيرفر:', socket.id);
 
-  // 1. استقبال حدث دخول المستخدم وتخزين بياناته
+  // 📥 عند اتصال هاتف جديد، جلب آخر 50 رسالة محفوظة في قاعدة البيانات وعرضها له تلقائياً
+  try {
+    const oldMessages = await Message.find().sort({ timestamp: -1 }).limit(50);
+    // قلب المصفوفة لتظهر الرسائل بالترتيب الزمني الصحيح (القديم في الأعلى)
+    socket.emit('load_chat_history', oldMessages.reverse());
+  } catch (err) {
+    console.error('خطأ في جلب سجل المحادثات:', err);
+  }
+
+  // استقبال حدث دخول المستخدم
   socket.on('join_user', (userData) => {
     activeUsers[socket.id] = {
       id: socket.id,
@@ -31,10 +57,8 @@ io.on('connection', (socket) => {
       color: userData.color
     };
     
-    // إرسال القائمة المحدثة للمتواجدين إلى الجميع
     io.emit('update_users_list', Object.values(activeUsers));
     
-    // بث رسالة نظام للجميع تفيد بانضمام المستخدم
     socket.broadcast.emit('system_broadcast', {
       name: userData.name,
       role: userData.role,
@@ -43,10 +67,12 @@ io.on('connection', (socket) => {
     });
   });
 
-  // 2. استقبال الرسائل النصية وبثها فوراً للجميع
-  socket.on('send_text_message', (msgData) => {
-    const user = activeUsers[socket.id] || msgData;
-    io.emit('receive_message', {
+  // ✉️ استقبال وحفظ الرسائل النصية وبثها
+  socket.on('send_text_message', async (msgData) => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    const newMsg = new Message({
       type: 'text',
       name: user.name,
       role: user.role,
@@ -54,12 +80,21 @@ io.on('connection', (socket) => {
       color: user.color,
       text: msgData.text
     });
+
+    try {
+      await newMsg.save(); // الحفظ الفوري في قاعدة البيانات
+      io.emit('receive_message', newMsg); // بث الرسالة المحفوظة للجميع
+    } catch (err) {
+      console.error('خطأ في حفظ الرسالة النصية:', err);
+    }
   });
 
-  // 3. استقبال ملفات الصور المرفوعة وبثها فوراً للجميع
-  socket.on('send_image_message', (imageData) => {
-    const user = activeUsers[socket.id] || imageData;
-    io.emit('receive_message', {
+  // 🖼️ استقبال وحفظ ملفات الصور المرفوعة وبثها
+  socket.on('send_image_message', async (imageData) => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    const newImgMsg = new Message({
       type: 'image',
       name: user.name,
       role: user.role,
@@ -67,32 +102,45 @@ io.on('connection', (socket) => {
       color: user.color,
       imageSrc: imageData.imageSrc
     });
+
+    try {
+      await newImgMsg.save(); // حفظ الصورة في قاعدة البيانات
+      io.emit('receive_message', newImgMsg);
+    } catch (err) {
+      console.error('خطأ في حفظ رسالة الصورة:', err);
+    }
   });
 
-  // 4. استقبال المذكرات الصوتية وبثها فوراً للجميع
-  socket.on('send_voice_message', (voiceData) => {
-    const user = activeUsers[socket.id] || voiceData;
-    io.emit('receive_message', {
+  // 🎤 استقبال وحفظ المذكرات الصوتية وبثها
+  socket.on('send_voice_message', async () => {
+    const user = activeUsers[socket.id];
+    if (!user) return;
+
+    const newVoiceMsg = new Message({
       type: 'voice',
       name: user.name,
       role: user.role,
       avatar: user.avatar,
       color: user.color
     });
+
+    try {
+      await newVoiceMsg.save(); // حفظ المذكرة الصوتية
+      io.emit('receive_message', newVoiceMsg);
+    } catch (err) {
+      console.error('خطأ في حفظ المذكرة الصوتية:', err);
+    }
   });
 
-  // 5. معالجة خروج المستخدم أو انقطاع اتصاله
   socket.on('disconnect', () => {
     if (activeUsers[socket.id]) {
-      console.log('مستخدم غادر الشات:', activeUsers[socket.id].name);
       delete activeUsers[socket.id];
       io.emit('update_users_list', Object.values(activeUsers));
     }
   });
 });
 
-// تشغيل الخادم على المنفذ 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`خادم الشات يعمل بنجاح على الرابط: http://localhost:${PORT}`);
+  console.log(`🚀 خادم الشات وقاعدة البيانات يعملان على: http://localhost:${PORT}`);
 });

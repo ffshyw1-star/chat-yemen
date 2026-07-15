@@ -9,7 +9,7 @@
 <style>
 :root {
   --main-blue: #002e3c;
-  --dark-nav: #091c24;
+  --dark-nav: #0a1b22;
   --text-gray: #a6a6a6;
   --border-color: #f1f1f1;
 }
@@ -17,39 +17,68 @@
 body { background: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 .hide { display: none !important; }
 
-/* الهيدر العلوي الازرق */
-.top-bar {
+/* الشريط العلوي الثابت */
+.top-header-bar {
   background: var(--main-blue);
   color: white;
-  padding: 12px 15px;
+  padding: 0 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 55px;
+  height: 56px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-.top-bar-right { display: flex; align-items: center; gap: 15px; }
-.top-bar-right i { font-size: 20px; cursor: pointer; }
-.top-bar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
-.top-bar-center .store-btn { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-.top-bar-left { display: flex; align-items: center; gap: 18px; }
-.top-bar-left i { font-size: 18px; cursor: pointer; position: relative; }
-.top-bar-left img { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fff; }
+.top-header-right { display: flex; align-items: center; }
+.top-header-right i { font-size: 20px; cursor: pointer; color: #ffffff; padding: 10px; }
 
-/* مساحة الشات الرئيسية */
-.chat-container { flex: 1; display: flex; flex-direction: column; background: #ffffff; overflow: hidden; }
+.top-header-center { flex: 1; display: flex; justify-content: center; }
+.store-pill-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  color: #ffffff;
+}
+
+.top-header-left { display: flex; align-items: center; gap: 15px; }
+.top-header-left i { font-size: 18px; cursor: pointer; color: #ffffff; padding: 5px; }
+.avatar-wrapper-top { position: relative; display: flex; align-items: center; cursor: pointer; }
+.avatar-wrapper-top img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #e040fb; object-fit: cover; }
+.avatar-wrapper-top .online-dot { width: 10px; height: 10px; background: #4cd964; border-radius: 50%; position: absolute; bottom: 0; right: 0; border: 1.5px solid var(--main-blue); }
+
+/* مساحة الشات الرئيسية الوسطى */
+.chat-main-view { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  background: #ffffff; 
+  margin-top: 56px; 
+  margin-bottom: 56px; 
+  overflow: hidden; 
+  position: relative;
+}
 .messages-box { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; }
 
-/* التخطيط الهندسي المماثل للصورة تماماً */
+/* محاذاة أسطر الشات والمحتوى */
 .message-row {
   display: flex;
-  flex-direction: row-reverse; /* لقلب العناصر: الوقت يمين، الصورة يسار */
+  flex-direction: row-reverse;
   align-items: flex-start;
   padding: 12px 8px;
   border-bottom: 1px solid #f9f9f9;
   width: 100%;
 }
-
-/* القسم الأيمن: التوقيت والنقاط الثلاثة */
 .msg-time-meta {
   width: 110px;
   display: flex;
@@ -61,45 +90,31 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
   flex-shrink: 0;
   padding-top: 4px;
 }
-.msg-time-meta .dots { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #ccc; }
-
-/* القسم الأوسط: المحتوى والاسم */
+.msg-time-meta .dots { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #ccc; cursor: pointer;}
 .msg-content-center {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* لتبدأ النصوص من جهة اليسار بمحاذاة الصورة */
+  align-items: flex-end;
   text-align: right;
   padding-left: 12px;
 }
-.user-name {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-.user-msg-text {
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: #222;
-  word-break: break-word;
-}
+.user-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.user-msg-text { font-size: 14.5px; line-height: 1.5; color: #222; word-break: break-word; }
 
-/* وسم النظام والرتب */
+/* عرض الصور والتسجيلات الصوتية بداخل الشات */
+.chat-uploaded-img { max-width: 220px; max-height: 220px; border-radius: 10px; margin-top: 5px; border: 1px solid #e0e0e0; }
+.voice-message { display: flex; align-items: center; gap: 8px; background: #f1f3f4; padding: 8px 12px; border-radius: 15px; margin-top: 5px; direction: ltr; }
+.voice-message i { color: var(--main-blue); font-size: 16px; cursor: pointer; }
+.voice-bar { width: 120px; height: 4px; background: #ccc; border-radius: 2px; position: relative; }
+.voice-progress { width: 40%; height: 100%; background: var(--main-blue); border-radius: 2px; }
+
 .system-join-text { color: #002e3c; font-size: 14px; font-weight: 600; }
 .r-visitor { color: #ff3b30; font-weight: bold; }
 .r-vip { color: #ff007f; font-weight: bold; }
+.user-avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #e0e0e0; }
 
-/* القسم الأيسر: الصورة الشخصية (الأفاتار) */
-.user-avatar-img {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid #e0e0e0;
-}
-
-/* شريط الكتابة السفلي الدائري المتناسق */
+/* شريط الكتابة السفلي */
 .input-area-bar {
   background: #ffffff;
   padding: 8px 12px;
@@ -108,13 +123,7 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
   gap: 10px;
   border-top: 1px solid var(--border-color);
 }
-.plus-icon-btn {
-  color: #7f8c8d;
-  font-size: 20px;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
+.plus-icon-btn { color: #7f8c8d; font-size: 20px; cursor: pointer; background: none; border: none; padding: 5px; }
 .input-wrapper-inner {
   flex: 1;
   display: flex;
@@ -124,31 +133,23 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
   padding: 4px 12px;
   gap: 8px;
 }
-.input-wrapper-inner input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  padding: 8px 4px;
-  font-size: 15px;
-}
-.input-wrapper-inner button {
-  background: transparent;
-  border: none;
-  color: #7f8c8d;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.input-wrapper-inner input { flex: 1; background: transparent; border: none; outline: none; padding: 8px 4px; font-size: 15px; }
+.input-wrapper-inner button { background: transparent; border: none; color: #7f8c8d; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .input-wrapper-inner .send-btn { color: #0084ff; }
+.mic-recording-active { color: #ff3b30 !important; animation: pulse-mic 1s infinite; }
+@keyframes pulse-mic { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
 
-/* القائمة السفلية الداكنة مطابقة للصورة تماماً */
+/* الشريط السفلي المظلم المماثل للصورة بالملي */
 .bottom-nav-menu {
   background: var(--dark-nav);
   display: flex;
-  height: 55px;
+  height: 56px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 .nav-menu-item {
   flex: 1;
@@ -159,53 +160,79 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
   color: #ffffff;
   text-decoration: none;
   font-size: 11px;
-  gap: 3px;
+  gap: 2px;
   opacity: 0.6;
   cursor: pointer;
 }
-.nav-menu-item i { font-size: 18px; }
+.nav-menu-item i { font-size: 19px; }
 .nav-menu-item.active { opacity: 1; color: #00cc99; }
 .nav-menu-item.active span { color: #ffffff; }
 .nav-menu-item .label-sub { font-size: 9px; color: #8a9aa4; display: block; margin-top: -2px; }
 
-/* صناديق الاختيارات المنبثقة */
-.emoji-popup {
-  position: absolute; bottom: 125px; right: 15px;
-  background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-  padding: 10px; width: 280px; height: 180px; overflow-y: auto; z-index: 100;
+/* 🌟 النوافذ والقوائم التفاعلية المنبثقة 🌟 */
+.popup-panel {
+  position: absolute; bottom: 65px; left: 15px; right: 15px;
+  background: #ffffff; border-radius: 12px; box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+  padding: 15px; z-index: 500; max-height: 300px; overflow-y: auto;
 }
-.emoji-popup span { font-size: 22px; padding: 4px; cursor: pointer; display: inline-block; }
+.popup-panel h4 { font-size: 15px; margin-bottom: 10px; color: var(--main-blue); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+
+/* قائمة الغرف وقائمة المتواجدين الجانبية المنزلقة */
+.side-drawer {
+  position: absolute; top: 0; right: -280px; width: 260px; height: 100%;
+  background: #ffffff; box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 999;
+  transition: right 0.3s ease; display: flex; flex-direction: column;
+}
+.side-drawer.open { right: 0; }
+.drawer-header { background: var(--main-blue); color: white; padding: 15px; font-weight: bold; font-size: 15px; }
+.drawer-list-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.drawer-list-item:hover { background: #f9f9f9; }
+
+/* كود تعديل الألوان والخطوط داخل الخيارات */
+.color-swatch { width: 30px; height: 30px; border-radius: 50%; display: inline-block; margin: 5px; cursor: pointer; border: 2px solid #ddd; }
+.font-select-input { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; }
+
+/* مشغل راديو وهمي علوي */
+.radio-top-player { background: #fff3cd; color: #856404; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; border-bottom: 1px solid #ffeeba; }
 </style>
 </head>
 <body>
 
-  <!-- شريط العناوين والتحكم العلوي (الأزرق) -->
-  <div class="top-bar">
-    <div class="top-bar-right">
-      <i class="fa fa-bars"></i>
+  <!-- 1. شريط العناوين والتحكم العلوي الأزرق -->
+  <div class="top-header-bar">
+    <div class="top-header-right">
+      <i class="fa fa-bars" id="menu_drawer_btn"></i>
     </div>
-    <div class="top-bar-center">
-      <div class="store-btn">
-        <i class="fa fa-shopping-basket"></i> Store.
+    <div class="top-header-center">
+      <div class="store-pill-btn" onclick="alert('سوق المتجر متاح قريباً لشراء الرتب والميزات!')">
+        <i class="fa fa-shopping-basket"></i>
+        <span>Store.</span>
       </div>
     </div>
-    <div class="top-bar-left">
-      <i class="fa fa-envelope"></i>
-      <i class="fa fa-user-plus"></i>
-      <i class="fa fa-heart"></i>
-      <img src="https://imgur.com" alt="بروفايل">
+    <div class="top-header-left">
+      <i class="fa-regular fa-envelope" onclick="alert('صندوق الرسائل الخاصة فارغ حالياً')"></i>
+      <i class="fa fa-user-plus" onclick="alert('لا توجد طلبات صداقة واردة')"></i>
+      <i class="fa-regular fa-heart" onclick="alert('تمت إضافة الغرفة إلى المفضلة!')"></i>
+      <div class="avatar-wrapper-top" onclick="alert('الملف الشخصي متصل بنجاح')">
+        <img src="https://imgur.com" alt="بروفايل">
+        <div class="online-dot"></div>
+      </div>
     </div>
   </div>
 
-  <!-- صندوق محادثات الغرفة الاستهدافي -->
-  <div class="chat-container">
+  <!-- 2. ساحة التصفح والمحادثات الغرفية الوسطى -->
+  <div class="chat-main-view">
+    
+    <!-- البث المباشر للراديو (يظهر عند تشغيل زر المحطة) -->
+    <div class="radio-top-player hide" id="radio_player">
+      <span>📻 البث المباشر الإذاعي لـ Araby.Chat يعمل حالياً...</span>
+      <i class="fa fa-stop-circle" style="cursor:pointer; font-size:18px;" onclick="toggleRadioMode()"></i>
+    </div>
+
     <div class="messages-box" id="messages_container">
-      
       <!-- رسالة 1: تطابق رسالة "الزعيم" بالصورة بالملي -->
       <div class="message-row">
-        <div class="msg-time-meta">
-          <span class="dots">...</span> 11:22 م
-        </div>
+        <div class="msg-time-meta"><span class="dots">...</span> 11:22 م</div>
         <div class="msg-content-center">
           <div class="user-name" style="color: #bf55ec;">الـزعـيـم</div>
           <div class="user-msg-text" style="color: #ff007f; font-weight: bold;">
@@ -214,105 +241,10 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
         </div>
         <img src="https://imgur.com" class="user-avatar-img">
       </div>
-
-      <!-- رسالة 2: انضمام مستخدم رتبة زائر (لولوه) -->
-      <div class="message-row">
-        <div class="msg-time-meta">
-          <span class="dots">...</span> 11:21 م
-        </div>
-        <div class="msg-content-center">
-          <div class="user-name" style="color: #5c97bf;">لوالواه</div>
-          <div class="user-msg-text system-join-text">
-            هذا المستخدم انضم للغرفة <span class="r-visitor">[ رتبة زائر ]</span>
-          </div>
-        </div>
-        <img src="https://placeholder.com" class="user-avatar-img">
-      </div>
-
-      <!-- رسالة 3: انضمام مستخدم رتبة مميز (Silya17) -->
-      <div class="message-row">
-        <div class="msg-time-meta">
-          <span class="dots">...</span> 11:20 م
-        </div>
-        <div class="msg-content-center">
-          <div class="user-name" style="color: #222;">Silya17</div>
-          <div class="user-msg-text system-join-text">
-            هذا المستخدم انضم للغرفة <span class="r-vip">[ رتبة مميز ]</span>
-          </div>
-        </div>
-        <img src="https://placeholder.com" class="user-avatar-img">
-      </div>
-
     </div>
 
-    <!-- شريط إدخال الرسائل السفلي -->
-    <div class="input-area-bar">
-      <button class="plus-icon-btn" id="plus_btn"><i class="fa fa-plus"></i></button>
-      <div class="input-wrapper-inner">
-        <button id="emoji_btn"><i class="fa-regular fa-face-smile"></i></button>
-        <input type="text" id="chat_input_field" placeholder="اكتب هنا..." autocomplete="off">
-        <button id="mic_btn"><i class="fa fa-microphone"></i></button>
-        <button id="send_msg_btn" class="send-btn hide"><i class="fa fa-paper-plane"></i></button>
-      </div>
-    </div>
-
-    <!-- نافذة الايموجي المنبثقة الذكية -->
-    <div class="emoji-popup hide" id="emoji_box_popup"></div>
-
-    <!-- القائمة السفلية الداكنة مطابقة للمتواجدين والغرف -->
-    <div class="bottom-nav-menu">
-      <div class="nav-menu-item active">
-        <i class="fa fa-users"></i>
-        <span>المتواجدين</span>
-      </div>
-      <div class="nav-menu-item">
-        <i class="fa fa-comments"></i>
-        <span>الغرف</span>
-      </div>
-      <div class="nav-menu-item">
-        <i class="fa fa-gear"></i>
-        <span>خيارات</span>
-      </div>
-      <div class="nav-menu-item">
-        <i class="fa fa-play-circle"></i>
-        <span>محطة</span>
-        <span class="label-sub">Araby.Chat</span>
-      </div>
-    </div>
-
-  </div>
-
-<script>
-const chatInputField = document.getElementById('chat_input_field');
-const sendMsgBtn = document.getElementById('send_msg_btn');
-const micBtn = document.getElementById('mic_btn');
-const messagesContainer = document.getElementById('messages_container');
-const emojiBtn = document.getElementById('emoji_btn');
-const emojiBoxPopup = document.getElementById('emoji_box_popup');
-
-// تبديل زر الإرسال والميكروفون عند الكتابة
-chatInputField.addEventListener('input', function() {
-  if (this.value.trim() !== "") {
-    sendMsgBtn.classList.remove('hide');
-    micBtn.classList.add('hide');
-  } else {
-    sendMsgBtn.classList.add('hide');
-    micBtn.classList.remove('hide');
-  }
-});
-
-// إرسال رسالة حية بنفس التصميم الهندسي المطلوب
-function triggerSendMessage() {
-  const text = chatInputField.value.trim();
-  if(!text) return;
-
-  const now = new Date();
-  const timeString = now.toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' });
-
-  const msgRow = document.createElement('div');
-  msgRow.className = 'message-row';
-  msgRow.innerHTML = `
-    <div class="msg-time-meta">
-      <span class="dots">...</span> ${timeString}
-    </div>
-    <div class="msg-content-center">
+    <!-- القائمة الجانبية المنزلقة (الغرف المتوفرة) -->
+    <div class="side-drawer" id="side_drawer_panel">
+      <div class="drawer-header">تصفح غرف اليمن</div>
+      <div class="drawer-list-item" onclick="switchRoom('العامة')"><i class="fa fa-comments"></i> الدردشة العامة</div>
+      <div class="drawer-list-item" onclick="switchRoom('تعارف وفلة')"><i class="fa fa-heart"></i> تعارف وفلة وسوالف</div>

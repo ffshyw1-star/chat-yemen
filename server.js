@@ -1,102 +1,78 @@
+// تأكد من تثبيت المكتبات أولاً: npm install express socket.io cors
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
-app.use(cors()); // السماح بالاتصال من أي موقع ويب
-
-// تفعيل دمج وعرض ملفات الواجهة الأمامية من مجلد public
-app.use(express.static(path.join(__dirname, 'public'))); 
-
-// توجيه أي مسار HTTP رئيسي إلى صفحة الشات
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.use(cors()); // للسماح بالاتصال بين خادم الـ PHP وخادم الـ Node
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", 
+        origin: "*", // يمكنك تحديده لاحقاً برابط موقعك فقط للأمان
         methods: ["GET", "POST"]
     }
 });
 
-// تخزين الرسائل مؤقتاً في ذاكرة السيرفر
-const roomHistory = {
-    general: [],
-    yemen: [],
-    algeria: [],
-    egypt: []
-};
+// تخزين المستخدمين النشطين في الذاكرة
+const activeUsers = {};
 
 io.on('connection', (socket) => {
-    console.log('مستخدم جديد اتصل بالسيرفر:', socket.id);
+    console.log('مستخدم جديد اتصل بالشات: ' + socket.id);
 
-    // 1. معالجة دخول المستخدم إلى غرفة محددة
+    // عند دخول المستخدم الشات وتحديد هويته والروم الخاص به
     socket.on('join_room', (data) => {
-        socket.join(data.room);
+        socket.join(data.room_id);
         
-        // إرسال الأرشيف القديم للرسائل للمستخدم فور دخوله
-        socket.emit('load_history', roomHistory[data.room] || []);
-
-        // بث رسالة النظام لجميع المتواجدين في الغرفة
-        const welcomeText = `${data.username} انضم للغرفة [ رتبة ${data.roleAr || 'زائر'} ]`;
-        const sysMsg = { type: "system", text: welcomeText };
-        
-        if (roomHistory[data.room]) {
-            roomHistory[data.room].push(sysMsg);
-        }
-        io.to(data.room).emit('receive_message', sysMsg);
-    });
-
-    // 2. استقبال رسائل المستخدمين وبثها فوراً لأعضاء الغرفة
-    socket.on('send_message', (data) => {
-        const userMsg = {
-            type: "user",
+        // حفظ بيانات الاتصال
+        activeUsers[socket.id] = {
             username: data.username,
-            gender: data.gender,
-            text: data.text,
-            role: data.role || "guest", // استقبال الرتبة ديناميكياً (guest أو admin)
-            time: data.time,
-            avatar: data.avatar
+            role: data.role,
+            room_id: data.room_id
         };
 
-        if (roomHistory[data.room]) {
-            roomHistory[data.room].push(userMsg);
-            // حفظ آخر 60 رسالة فقط لتخفيف الضغط على السيرفر المجاني
-            if (roomHistory[data.room].length > 60) roomHistory[data.room].shift();
-        }
-
-        io.to(data.room).emit('receive_message', userMsg);
+        // إرسال رسالة نظام للروم بتواجد مستخدم جديد
+        io.to(data.room_id).emit('system_message', {
+            text: `المشرف/النظام: دخل ${data.username} إلى الغرفة الآن.`
+        });
     });
 
-    // 3. أمر الطرد والحظر الصادر من الإدارة
-    socket.on('admin_kick', (data) => {
-        const kickMsg = { type: "system", text: `[ تم حظر وطرد المستخدم ${data.targetUser} من السيرفر فوراً ]` };
-        if (roomHistory[data.room]) {
-            roomHistory[data.room].push(kickMsg);
+    // استقبال الرسائل العامة وتوزيعها فوراً
+    socket.on('send_message', (data) => {
+        const user = activeUsers[socket.id];
+        if (user) {
+            // نظام الاختصارات التلقائي (س1 -> السلام عليكم)
+            let messageText = data.text;
+            if(messageText === 'س1') messageText = 'السلام عليكم ورحمة الله وبركاته';
+            if(messageText === 'تيت') messageText = 'برب دقيقة وراجع لكم (BRB)';
+
+            const msgPayload = {
+                username: user.username,
+                role: user.role,
+                text: messageText,
+                time: new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' }),
+                is_private: false
+            };
+
+            // إرسال الرسالة لجميع من في هذه الغرفة فقط
+            io.to(user.room_id).emit('receive_message', msgPayload);
         }
-        io.to(data.room).emit('receive_message', kickMsg);
-        io.to(data.room).emit('user_banned', { username: data.targetUser });
     });
 
-    // 4. أمر تصفير ومسح محادثات الغرفة من لوحة التحكم
-    socket.on('clear_room', (data) => {
-        if (roomHistory[data.room]) {
-            roomHistory[data.room] = [];
-            io.to(data.room).emit('room_cleared');
-        }
-    });
-
+    // عند قطع الاتصال (الخروج من المتصفح أو إغلاق النت)
     socket.on('disconnect', () => {
-        console.log('مستخدم قطع الاتصال:', socket.id);
+        const user = activeUsers[socket.id];
+        if (user) {
+            io.to(user.room_id).emit('system_message', {
+                text: `خرج ${user.username} من الغرفة.`
+            });
+            delete activeUsers[socket.id];
+        }
     });
 });
 
-// تشغيل السيرفر على بورت Render التلقائي أو 3000 محلياً
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`سيرفر شات اليمن المطور يعمل بنجاح على البورت ${PORT}`);
+// الشات يعمل على البورت 3000 بشكل منفصل
+server.listen(3000, () => {
+    console.log('سيرفر الـ Socket.IO يعمل بنجاح على البورت 3000');
 });

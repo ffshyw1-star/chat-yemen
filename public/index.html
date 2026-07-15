@@ -1,193 +1,145 @@
-// إنشاء اتصال حقيقي مع خادم Node.js
-const socket = io();
-
-const visitorAvatar = "https://mixkit.co";
-const memberAvatar = "https://ibb.co";
-
-let myUser = { name: "مستخدم", role: "visitor", avatar: visitorAvatar, color: "#00cc99" };
-let isRecordingMode = false;
-
-window.addEventListener('load', () => {
-  const savedUser = localStorage.getItem('chat_user_data');
-  if (savedUser) {
-    myUser = JSON.parse(savedUser);
-    document.getElementById('top_header_avatar_img').src = myUser.avatar;
-    document.getElementById('login_page').style.display = 'none';
-    socket.emit('join_user', myUser);
-  }
-});
-
-function handleChatLogin() {
-  const usernameField = document.getElementById('login_username').value.trim();
-  const roleSelect = document.getElementById('login_role').value;
-  if(!usernameField) { alert("اكتب اسمك أولاً!"); return; }
-  
-  myUser.name = usernameField;
-  myUser.role = roleSelect;
-  myUser.avatar = (roleSelect === 'visitor') ? visitorAvatar : memberAvatar;
-  
-  if(roleSelect === 'vip') myUser.color = "#ff007f";
-  if(roleSelect === 'mod') myUser.color = "#4cd964";
-  if(roleSelect === 'admin') myUser.color = "#ff9500";
-  if(roleSelect === 'owner') myUser.color = "#9b59b6";
-
-  localStorage.setItem('chat_user_data', JSON.stringify(myUser));
-  document.getElementById('top_header_avatar_img').src = myUser.avatar;
-  document.getElementById('login_page').style.display = 'none';
-  
-  socket.emit('join_user', myUser);
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شات اليمن | شات اليمن العربي</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="https://cloudflare.com">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root {
+  --main-blue: #002e3c;
+  --dark-nav: #0a1b22;
+  --text-gray: #a6a6a6;
+  --border-color: #f1f1f1;
 }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', sans-serif; }
+body { background: #ffffff; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+.hide { display: none !important; }
 
-// 💾 [ميزة قاعدة البيانات]: استقبال وعرض السجل التاريخي لآخر 50 رسالة مخزنة فور دخول الشات
-socket.on('load_chat_history', (messagesArray) => {
-  const container = document.getElementById('messages_container');
-  container.innerHTML = ''; // تنظيف الساحة لبناء السجل النظيف
-  messagesArray.forEach(msg => {
-    appendSingleMessage(msg);
-  });
-  container.scrollTop = container.scrollHeight;
-});
+#login_page {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: var(--main-blue); color: white; z-index: 2000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+}
+.login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 100%; max-width: 365px; text-align: center; }
+.login-box input, .login-box select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; font-size: 15px; text-align: center; }
+.login-box select { text-align-last: center; cursor: pointer; background: white; color: #333; font-weight: bold; }
+.login-btn-submit { background: #74b20e; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; border: none; }
 
-socket.on('update_users_list', (usersArray) => {
-  document.getElementById('count_online').innerText = usersArray.length;
-  const container = document.getElementById('users_online_bind');
-  container.innerHTML = '';
-  usersArray.forEach(user => {
-    container.innerHTML += `
-      <div class="drawer-list-item">
-        <img src="${user.avatar}" style="width:30px; height:30px; border-radius:50%; object-fit:cover;">
-        <b style="color:${user.color}">${user.name}</b>
-      </div>`;
-  });
-});
+.top-header-bar {
+  background: var(--main-blue); color: white; padding: 0 15px;
+  display: flex; justify-content: space-between; align-items: center;
+  height: 56px; position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.top-header-right i { font-size: 20px; cursor: pointer; color: #ffffff; padding: 10px; }
+.top-header-center { flex: 1; display: flex; justify-content: center; }
+.store-pill-btn { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 14px; border-radius: 8px; font-size: 11px; cursor: pointer; display: flex; flex-direction: column; align-items: center; color: #ffffff; }
 
-socket.on('system_broadcast', (sysData) => {
-  const msgRow = document.createElement('div');
-  msgRow.className = 'message-row';
-  msgRow.innerHTML = `
-    <div class="msg-time-meta"><span class="dots">...</span> نظام</div>
-    <div class="msg-content-center">
-      <div class="user-name" style="color:#002e3c;">تنبيه النظام</div>
-      <div class="user-msg-text" style="color: #002e3c; font-weight:600;">انضم المستخدم <b style="color:red;">${sysData.name}</b> إلى الغرفة حالياً 👋</div>
+.top-header-left { display: flex; align-items: center; gap: 15px; }
+.top-header-left i { font-size: 18px; cursor: pointer; color: #ffffff; padding: 5px; }
+.avatar-wrapper-top { position: relative; display: flex; align-items: center; cursor: pointer; }
+.avatar-wrapper-top img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; }
+.avatar-wrapper-top .online-dot { width: 10px; height: 10px; background: #4cd964; border-radius: 50%; position: absolute; bottom: 0; right: 0; border: 1.5px solid var(--main-blue); }
+
+.chat-main-view { flex: 1; display: flex; flex-direction: column; background: #ffffff; margin-top: 56px; margin-bottom: 56px; overflow: hidden; position: relative; }
+.messages-box { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; }
+
+.message-row { display: flex; flex-direction: row-reverse; align-items: flex-start; padding: 12px 8px; border-bottom: 1px solid #f9f9f9; width: 100%; }
+.msg-time-meta { width: 110px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 11px; color: var(--text-gray); flex-shrink: 0; padding-top: 4px; }
+.msg-time-meta .dots { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #ccc; cursor: pointer;}
+.msg-content-center { flex: 1; display: flex; flex-direction: column; align-items: flex-end; text-align: right; padding-left: 12px; }
+.user-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+.user-msg-text { font-size: 14.5px; line-height: 1.5; color: #222; word-break: break-word; }
+
+.tag-role { font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
+.r-visitor { color: #ff3b30; }
+.r-member { color: #51c4d3; }
+.r-vip { color: #ff007f; }
+.r-mod { color: #4cd964; }
+.r-admin { color: #ff9500; }
+.r-owner { color: #9b59b6; }
+
+.user-avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #e0e0e0; }
+.chat-uploaded-img { max-width: 220px; max-height: 220px; border-radius: 10px; margin-top: 5px; border: 1px solid #e0e0e0; }
+.voice-message { display: flex; align-items: center; gap: 8px; background: #f1f3f4; padding: 8px 12px; border-radius: 15px; margin-top: 5px; direction: ltr; }
+.voice-message i { color: var(--main-blue); font-size: 16px; cursor: pointer; }
+.voice-bar { width: 120px; height: 4px; background: #ccc; border-radius: 2px; }
+.voice-progress { width: 40%; height: 100%; background: var(--main-blue); border-radius: 2px; }
+
+.input-area-bar { background: #ffffff; padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border-color); }
+.plus-icon-btn { color: #7f8c8d; font-size: 20px; cursor: pointer; background: none; border: none; padding: 5px; }
+.input-wrapper-inner { flex: 1; display: flex; align-items: center; background: #f1f3f4; border-radius: 24px; padding: 4px 12px; gap: 8px; }
+.input-wrapper-inner input { flex: 1; background: transparent; border: none; outline: none; padding: 8px 4px; font-size: 15px; }
+.input-wrapper-inner button { background: transparent; border: none; color: #7f8c8d; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.input-wrapper-inner .send-btn { color: #0084ff; }
+.mic-recording-active { color: #ff3b30 !important; animation: pulse-mic 1s infinite; }
+
+.bottom-nav-menu { background: var(--dark-nav); display: flex; height: 56px; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+.nav-menu-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; text-decoration: none; font-size: 11px; gap: 2px; opacity: 0.6; cursor: pointer; }
+.nav-menu-item i { font-size: 19px; }
+.nav-menu-item.active { opacity: 1; color: #00cc99; }
+.nav-menu-item .label-sub { font-size: 9px; color: #8a9aa4; display: block; margin-top: -2px; }
+
+.popup-panel { position: absolute; bottom: 65px; left: 15px; right: 15px; background: #ffffff; border-radius: 12px; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 15px; z-index: 500; max-height: 250px; overflow-y: auto; }
+.popup-panel h4 { font-size: 15px; margin-bottom: 10px; color: var(--main-blue); border-bottom: 1px solid #eee; padding-bottom: 5px; }
+.side-drawer { position: absolute; top: 0; right: -280px; width: 260px; height: 100%; background: #ffffff; box-shadow: -5px 0 20px rgba(0,0,0,0.1); z-index: 999; transition: right 0.3s ease; display: flex; flex-direction: column; }
+.side-drawer.open { right: 0; }
+.drawer-header { background: var(--main-blue); color: white; padding: 15px; font-weight: bold; font-size: 15px; }
+.drawer-list-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.color-swatch { width: 30px; height: 30px; border-radius: 50%; display: inline-block; margin: 5px; cursor: pointer; border: 2px solid #ddd; }
+.radio-top-player { background: #fff3cd; color: #856404; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; border-bottom: 1px solid #ffeeba; }
+.emoji-popup { position: absolute; bottom: 70px; right: 15px; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); padding: 10px; width: 280px; height: 150px; overflow-y: auto; z-index: 100; }
+.emoji-popup span { font-size: 22px; padding: 4px; cursor: pointer; display: inline-block; }
+</style>
+</head>
+<body>
+
+  <div id="login_page">
+    <div class="login-box">
+      <h3 style="margin-bottom:15px;">شات اليمن العربي</h3>
+      <input type="text" id="login_username" placeholder="ادخل اسمك هنا..." required>
+      <select id="login_role">
+        <option value="visitor">رتبة: زائر</option>
+        <option value="member">رتبة: عضو عادي</option>
+        <option value="vip">رتبة: مميز ✨</option>
+        <option value="mod">رتبة: مشرف 🛡️</option>
+        <option value="admin">رتبة: أدمن 🛠️</option>
+        <option value="owner">رتبة: المالك 🌟</option>
+      </select>
+      <button class="login-btn-submit" onclick="handleChatLogin()">دخول الدردشة</button>
     </div>
-    <img src="${sysData.avatar}" class="user-avatar-img">
-  `;
-  document.getElementById('messages_container').appendChild(msgRow);
-  document.getElementById('messages_container').scrollTop = document.getElementById('messages_container').scrollHeight;
-});
+  </div>
 
-// استقبال البث المباشر للرسائل الجديدة واللحظية
-socket.on('receive_message', (data) => {
-  appendSingleMessage(data);
-});
-
-// دالة موحدة لرندرة وبناء هيكل الرسالة الفردية
-function appendSingleMessage(data) {
-  const msgRow = document.createElement('div');
-  msgRow.className = 'message-row';
-  
-  // تنسيق وقت الرسالة الحقيقي بناءً على تاريخ الحفظ
-  const msgDate = new Date(data.timestamp || Date.now());
-  const timeString = msgDate.toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' });
-
-  let contentHtml = `<div class="user-msg-text">${data.text}</div>`;
-  if(data.type === 'image') contentHtml = `<img src="${data.imageSrc}" class="chat-uploaded-img">`;
-  if(data.type === 'voice') contentHtml = `<div class="voice-message"><i class="fa fa-play"></i><div class="voice-bar"><div class="voice-progress"></div></div><span style="font-size:11px; color:#666;">0:05</span></div>`;
-
-  msgRow.innerHTML = `
-    <div class="msg-time-meta"><span class="dots">...</span> ${timeString}</div>
-    <div class="msg-content-center">
-      <div class="user-name" style="color: ${data.color};">${data.name} ${getRoleTag(data.role)}</div>
-      ${contentHtml}
+  <div class="top-header-bar">
+    <div class="top-header-right"><i class="fa fa-bars" id="menu_drawer_btn"></i></div>
+    <div class="top-header-center"><div class="store-pill-btn"><span>Store.</span></div></div>
+    <div class="top-header-left">
+      <i class="fa-regular fa-envelope"></i><i class="fa fa-user-plus"></i><i class="fa-regular fa-heart"></i>
+      <input type="file" id="profile_pic_uploader" accept="image/*" class="hide">
+      <div class="avatar-wrapper-top" id="top_profile_avatar_click">
+        <img src="" id="top_header_avatar_img" alt="بروفايل">
+        <div class="online-dot"></div>
+      </div>
     </div>
-    <img src="${data.avatar}" class="user-avatar-img">
-  `;
-  document.getElementById('messages_container').appendChild(msgRow);
-  document.getElementById('messages_container').scrollTop = document.getElementById('messages_container').scrollHeight;
-}
+  </div>
 
-function getRoleTag(role) {
-  if(role === 'visitor') return `<span class="tag-role r-visitor">[ زائر ]</span>`;
-  if(role === 'member') return `<span class="tag-role r-member">[ عضو ]</span>`;
-  if(role === 'vip') return `<span class="tag-role r-vip">[ مميز ✨ ]</span>`;
-  if(role === 'mod') return `<span class="tag-role r-mod">[ مشرف 🛡️ ]</span>`;
-  if(role === 'admin') return `<span class="tag-role r-admin">[ أدمن 🛠️ ]</span>`;
-  if(role === 'owner') return `<span class="tag-role r-owner">[ المالك 🌟 ]</span>`;
-  return '';
-}
+  <div class="chat-main-view">
+    <div class="radio-top-player hide" id="radio_player"><span>📻 البث المباشر الإذاعي يعمل...</span></div>
+    <div class="messages-box" id="messages_container"></div>
 
-function triggerSendMessage() {
-  const textField = document.getElementById('chat_input_field');
-  const text = textField.value.trim();
-  if(!text) return;
-  socket.emit('send_text_message', { text: text });
-  textField.value = "";
-  document.getElementById('send_msg_btn').classList.add('hide');
-  document.getElementById('mic_btn').classList.remove('hide');
-}
+    <div class="side-drawer" id="side_drawer_panel">
+      <div class="drawer-header">غرف اليمن</div>
+      <div class="drawer-list-item">🟢 الغرفة العامة الرئيسية</div>
+    </div>
 
-document.getElementById('hidden_file_input').addEventListener('change', function() {
-  if (this.files && this.files) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      socket.emit('send_image_message', { imageSrc: e.target.result });
-    };
-    reader.readAsDataURL(this.files);
-  }
-});
+    <div class="popup-panel hide" id="active_users_panel">
+      <h4>المتواجدون حالياً (<span id="count_online">0</span>)</h4>
+      <div id="users_online_bind"></div>
+    </div>
 
-document.getElementById('mic_btn').addEventListener('click', () => {
-  const input = document.getElementById('chat_input_field');
-  if(!isRecordingMode) {
-    isRecordingMode = true; document.getElementById('mic_btn').classList.add('mic-recording-active');
-    input.value = "جاري تسجيل مذكرة صوتية..."; input.disabled = true;
-  } else {
-    isRecordingMode = false; document.getElementById('mic_btn').classList.remove('mic-recording-active');
-    input.value = ""; input.disabled = false;
-    socket.emit('send_voice_message', {});
-  }
-});
-
-document.getElementById('top_profile_avatar_click').addEventListener('click', () => {
-  if(myUser.role === 'visitor' || myUser.role === 'member') alert("تغيير الصورة متاح للرتب المميزة والإدارية فقط!");
-  else document.getElementById('profile_pic_uploader').click();
-});
-document.getElementById('profile_pic_uploader').addEventListener('change', function() {
-  if (this.files && this.files) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      myUser.avatar = e.target.result;
-      document.getElementById('top_header_avatar_img').src = myUser.avatar;
-      localStorage.setItem('chat_user_data', JSON.stringify(myUser));
-      socket.emit('join_user', myUser);
-    };
-    reader.readAsDataURL(this.files);
-  }
-});
-
-document.getElementById('chat_input_field').addEventListener('input', function() {
-  if (this.value.trim() !== "") { document.getElementById('send_msg_btn').classList.remove('hide'); document.getElementById('mic_btn').classList.add('hide'); }
-  else { document.getElementById('send_msg_btn').classList.add('hide'); document.getElementById('mic_btn').classList.remove('hide'); }
-});
-document.getElementById('send_msg_btn').addEventListener('click', triggerSendMessage);
-document.getElementById('chat_input_field').addEventListener('keypress', (e) => { if(e.key === 'Enter') triggerSendMessage(); });
-document.getElementById('menu_drawer_btn').addEventListener('click', (e) => { e.stopPropagation(); document.getElementById('side_drawer_panel').classList.toggle('open'); });
-function toggleSubPanel(t) {
-  document.getElementById('active_users_panel').classList.add('hide'); document.getElementById('options_panel').classList.add('hide');
-  document.querySelectorAll('.nav-menu-item').forEach(el => el.classList.remove('active'));
-  if(t === 'users') { document.getElementById('active_users_panel').classList.remove('hide'); document.getElementById('btn_nav_users').classList.add('active'); }
-  if(t === 'rooms') { document.getElementById('side_drawer_panel').classList.toggle('open'); document.getElementById('btn_nav_rooms').classList.add('active'); }
-  if(t === 'options') { document.getElementById('options_panel').classList.remove('hide'); document.getElementById('btn_nav_options').classList.add('active'); }
-}
-function toggleRadioMode() { document.getElementById('radio_player').classList.toggle('hide'); document.getElementById('btn_nav_radio').classList.toggle('active'); }
-function changeMyColor(c) { myUser.color = c; localStorage.setItem('chat_user_data', JSON.stringify(myUser)); socket.emit('join_user', myUser); }
-function clearSavedData() { if(confirm("تسجيل خروج؟")) { localStorage.removeItem('chat_user_data'); location.reload(); } }
-const emojiBtn = document.getElementById('emoji_btn'); const emojiBoxPopup = document.getElementById('emoji_box_popup');
-const emojisList = ["😀","😂","😃","😄","😅","😆","😉","😊","😎","😍","😘","😗","😙","😚","🤩","🤔","🤨","😐"];
-emojisList.forEach(emoji => {
-  const span = document.createElement('span'); span.innerText = emoji;
-  span.addEventListener('click', () => { document.getElementById('chat_input_field').value += emoji; document.getElementById('chat_input_field').dispatchEvent(new Event('input')); emojiBoxPopup.classList.add('hide'); });
-  emojiBoxPopup.appendChild(span);
-});
-emojiBtn.addEventListener('click', (e) => { e.stopPropagation(); emojiBoxPopup.toggle('hide'); });
-document.addEventListener('click', () => { emojiBoxPopup.classList.add('hide'); document.getElementById('side_drawer_panel').classList.remove('open'); });
+    <div class="popup-panel hide" id="options_panel">
+      <h4>إعدادات المظهر</h4>
+      <span class="color-swatch" style="background:#bf55ec" onclick="changeMyColor('#bf55ec')"></span>

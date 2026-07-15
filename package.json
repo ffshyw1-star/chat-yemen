@@ -1,0 +1,14 @@
+{
+  "name": "chat-yemen-backend",
+  "version": "1.0.0",
+  "description": "واجهة خلفية احترافية لشات اليمن المطور لعام 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}

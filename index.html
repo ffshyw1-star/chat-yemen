@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>موقع شات اليمن المطور</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    
+    <!-- استدعاء مكتبة الاتصال بالسيرفر الخلفي الجديد Socket.io -->
+    <script src="https://socket.io"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --female-color: #ec4899;
+            --other-color: #64748b;
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --text-main: #f8fafc;
+            --system-msg: #ef4444;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        .container { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; background: var(--panel-bg); box-shadow: 0 4px 20px rgba(0,0,0,0.3); position: relative; }
+        .screen { display: none; flex-direction: column; flex: 1; padding: 20px; }
+        .screen.active { display: flex; }
+        h2 { text-align: center; margin-bottom: 20px; color: #38bdf8; }
+        .auth-nav { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary { background: #334155; }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        input, select, textarea { padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 15px; }
+        .gender-selector { display: flex; gap: 10px; margin-top: 5px; }
+        .gender-opt { flex: 1; padding: 10px; text-align: center; background: #0f172a; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .gender-opt.selected[data-gender="male"] { border-color: var(--primary); box-shadow: 0 0 10px rgba(37,99,235,0.5); }
+        .gender-opt.selected[data-gender="female"] { border-color: var(--female-color); box-shadow: 0 0 10px rgba(236,72,153,0.5); }
+        .gender-opt.selected[data-gender="other"] { border-color: white; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .rooms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        @media (max-width: 400px) { .rooms-grid { grid-template-columns: 1fr; } }
+        .room-card { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
+        .room-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
+        .room-btn { background: #059669; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px; cursor: pointer; border: none; display: inline-block; }
+        .chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; height: calc(100vh - 220px); background: #ffffff; color: #333333; }
+        .msg-container { display: flex; flex-direction: row-reverse; gap: 12px; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px dashed #f1f5f9; }
+        .user-avatar { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid #cbd5e1; flex-shrink: 0; background: #f8fafc; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .msg-content-area { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
+        .msg-username { font-size: 15px; font-weight: 700; color: #0284c7; margin-bottom: 4px; display: inline-block; }
+        .badge-vip { background: #eab308; color: #000 !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-moderator { background: #3b82f6; color: #fff !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-management { background: #a855f7; color: #fff !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-admin { background: #f97316; color: #fff !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+        .badge-owner { background: #ef4444; color: #fff !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+        .msg-text { font-size: 15px; color: #475569; line-height: 1.6; word-break: break-word; background: transparent; padding: 0; }
+        .msg-time { font-size: 12px; color: #94a3b8; align-self: flex-start; font-family: monospace; white-space: nowrap; padding-top: 4px; }
+        .system-msg { align-self: center; background: #fef2f2; color: var(--danger); padding: 6px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; border: 1px solid #fee2e2; margin: 5px 0; width: fit-content; }
+        .chat-input-bar { padding: 15px; background: #0f172a; display: flex; gap: 10px; border-top: 1px solid #334155; }
+        .chat-input-bar input { flex: 1; background: #1e293b; color: white;}
+        .admin-box { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #334155; }
+        footer { text-align: center; padding: 15px; background: #0f172a; font-size: 14px; font-weight: bold; color: #64748b; border-top: 1px solid #1e293b; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="welcomeScreen" class="screen active">
+        <h2>أهلاً بك في غرف الدردشة</h2>
+        <div class="auth-nav">
+            <button class="btn" onclick="showScreen('visitorScreen')">دخول زوار 👤</button>
+            <button class="btn btn-secondary" onclick="showScreen('loginScreen')">دخول أعضاء ورتب</button>
+            <button class="btn btn-secondary" onclick="showScreen('registerScreen')">تسجيل عضوية جديدة</button>
+        </div>
+    </div>
+
+    <div id="visitorScreen" class="screen">
+        <h2>دخول زائر سريع</h2>
+        <div class="form-group">
+            <label>الاسم أو المستعار:</label>
+            <input type="text" id="visitorName" placeholder="اكتب اسمك هنا...">
+        </div>
+        <div class="form-group">
+            <label>اختر الجنس:</label>
+            <div class="gender-selector">
+                <div class="gender-opt" data-gender="male" onclick="selectGender(this, 'male')">ذكر</div>
+                <div class="gender-opt" data-gender="female" onclick="selectGender(this, 'female')">أنثى</div>
+                <div class="gender-opt" data-gender="other" onclick="selectGender(this, 'other')">آخر</div>
+            </div>
+        </div>
+        <button class="btn" onclick="submitVisitor()">دخول الآن</button>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
+    </div>
+
+    <div id="loginScreen" class="screen">
+        <h2>تسجيل دخول الأعضاء والمسؤولين</h2>
+        <div class="form-group">
+            <label>اسم المستخدم:</label>
+            <input type="text" id="loginUser" placeholder="اسم الحساب">
+        </div>
+        <div class="form-group">
+            <label>كلمة المرور:</label>
+            <input type="password" id="loginPass" placeholder="******">
+        </div>
+        <div class="form-group">
+            <label>اختر رتبتك الخاصة:</label>
+            <select id="loginRole" onchange="toggleAvatarInput()">
+                <option value="member">عضو عادي</option>
+                <option value="vip">مميز (VIP)</option>
+                <option value="moderator">مشرف</option>
+                <option value="management">إدارة</option>
+                <option value="admin">أدمن</option>
+                <option value="owner">المالك</option>
+            </select>
+        </div>
+        <div class="form-group" id="loginAvatarGroup" style="display:none;">
+            <label style="color:#fbbf24;">رابط صورتك الشخصية المباشر (URL):</label>
+            <input type="text" id="loginAvatarUrl" placeholder="https://example.com">
+        </div>
+        <button class="btn" onclick="submitLogin()">دخول الحساب</button>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
+    </div>
+
+    <div id="registerScreen" class="screen">
+        <h2>إنشاء عضوية جديدة</h2>
+        <div class="form-group">
+            <label>اسم المستخدم:</label>
+            <input type="text" id="regUser" placeholder="اسم الحساب">
+        </div>
+        <div class="form-group">
+            <label>كلمة المرور:</label>
+            <input type="password" id="regPass" placeholder="******">
+        </div>
+        <button class="btn" onclick="submitRegister()">إنشاء حساب ودخول</button>
+        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
+    </div>
+
+    <div id="roomsScreen" class="screen">
+        <h2>اختر غرفة للدردشة</h2>
+        <div class="rooms-grid">
+            <button class="room-card btn" onclick="enterRoom('general')">🌎 غرفة العامة</button>
+            <button class="room-card btn" onclick="enterRoom('yemen')">🌎 غرفة اليمن</button>
+            <button class="room-card btn" onclick="enterRoom('algeria')">🌎 غرفة الجزائر</button>

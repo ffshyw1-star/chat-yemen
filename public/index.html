@@ -1,141 +1,165 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>موقع شات اليمن المطور</title>
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="/socket.io/socket.io.js"></script>
+<script>
+    // 1. تعريف المتغيرات بشكل مستقل تماماً عن السيرفر لضمان عمل الأزرار فوراً
+    let socket = null;
+    let currentUser = { username: '', gender: 'male', role: 'guest', roleAr: 'زائر', room: '' };
 
-    <style>
-        :root {
-            --primary: #2563eb;
-            --female-color: #ec4899;
-            --other-color: #64748b;
-            --bg-dark: #0f172a;
-            --panel-bg: #1e293b;
-            --text-main: #f8fafc;
-            --system-msg: #ef4444;
-            --danger: #ef4444;
-            --success: #10b981;
+    // محاولة الاتصال بالسوكت في الخلفية دون تعطيل المتصفح
+    try {
+        if (typeof io !== 'undefined') {
+            socket = io();
+            setupSocketListeners();
+        } else {
+            console.warn("جاري انتظار استيقاظ سيرفر Socket.io في الخلفية...");
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
-        body { background-color: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
-        .container { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; background: var(--panel-bg); box-shadow: 0 4px 20px rgba(0,0,0,0.3); position: relative; }
-        .screen { display: none; flex-direction: column; flex: 1; padding: 20px; }
-        .screen.active { display: flex; }
-        h2 { text-align: center; margin-bottom: 20px; color: #38bdf8; }
-        .auth-nav { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
-        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:hover { opacity: 0.9; }
-        .btn-secondary { background: #334155; }
-        .btn-danger { background: var(--danger); }
-        .btn-success { background: var(--success); }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
-        input, select, textarea { padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-size: 15px; }
-        .gender-selector { display: flex; gap: 10px; margin-top: 5px; }
-        .gender-opt { flex: 1; padding: 10px; text-align: center; background: #0f172a; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .gender-opt.selected[data-gender="male"] { border-color: var(--primary); box-shadow: 0 0 10px rgba(37,99,235,0.5); }
-        .gender-opt.selected[data-gender="female"] { border-color: var(--female-color); box-shadow: 0 0 10px rgba(236,72,153,0.5); }
-        .rooms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .room-card { background: #0f172a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #334155; }
-        .room-title { font-size: 16px; font-weight: bold; margin-bottom: 10px; }
-        .room-btn { background: #059669; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px; cursor: pointer; border: none; display: inline-block; }
-        .chat-header { background: #0f172a; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; height: calc(100vh - 220px); background: #ffffff; color: #333333; min-height: 300px; }
-        .msg-container { display: flex; flex-direction: row-reverse; gap: 12px; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px dashed #f1f5f9; }
-        .user-avatar { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid #cbd5e1; flex-shrink: 0; background: #f8fafc; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .msg-content-area { display: flex; flex-direction: column; align-items: flex-start; flex: 1; }
-        .msg-username { font-size: 15px; font-weight: 700; color: #0284c7; margin-bottom: 4px; display: inline-block; }
-        .badge-vip { background: #eab308; color: #000 !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .badge-owner { background: #ef4444; color: #fff !important; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
-        .msg-text { font-size: 15px; color: #475569; line-height: 1.6; word-break: break-word; }
-        .msg-time { font-size: 12px; color: #94a3b8; align-self: flex-start; font-family: monospace; }
-        .system-msg { align-self: center; background: #fef2f2; color: var(--danger); padding: 6px 20px; border-radius: 6px; font-size: 14px; font-weight: 600; text-align: center; border: 1px solid #fee2e2; margin: 5px 0; }
-        .chat-input-bar { padding: 15px; background: #0f172a; display: flex; gap: 10px; border-top: 1px solid #334155; }
-        .chat-input-bar input { flex: 1; background: #1e293b; color: white;}
-        .admin-box { background: #1e293b; padding: 15px; border-radius: 8px; margin: 10px; border: 1px solid #ef4444; }
-        footer { text-align: center; padding: 15px; background: #0f172a; font-size: 14px; font-weight: bold; color: #64748b; border-top: 1px solid #1e293b; }
-    </style>
-</head>
-<body>
+    } catch(e) {
+        console.error("خطأ في بدء السوكت:", e);
+    }
 
-<div class="container">
-    <div id="welcomeScreen" class="screen active">
-        <h2>أهلاً بك في غرف الدردشة</h2>
-        <div class="auth-nav">
-            <button class="btn" onclick="showScreen('visitorScreen')">دخول زوار 👤</button>
-            <button class="btn btn-secondary" onclick="showScreen('loginScreen')">دخول أعضاء ورتب</button>
-            <button class="btn btn-secondary" onclick="showScreen('registerScreen')">تسجيل عضوية جديدة</button>
-        </div>
-    </div>
+    // 2. دالة تنقل الشاشات (تعمل الآن فوراً وبشكل مستقل 100%)
+    function showScreen(screenId) {
+        const screens = ['welcomeScreen', 'visitorScreen', 'loginScreen', 'registerScreen', 'roomsScreen', 'chatScreen'];
+        screens.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.style.display = 'none';
+        });
+        const activeEl = document.getElementById(screenId);
+        if(activeEl) activeEl.style.display = 'flex';
+    }
 
-    <div id="visitorScreen" class="screen">
-        <h2>دخول زائر سريع</h2>
-        <div class="form-group">
-            <label>الاسم أو المستعار:</label>
-            <input type="text" id="visitorName" placeholder="اكتب اسمك هنا...">
-        </div>
-        <div class="form-group">
-            <label>اختر الجنس:</label>
-            <div class="gender-selector">
-                <div class="gender-opt selected" data-gender="male" onclick="selectGender(this, 'male')">ذكر</div>
-                <div class="gender-opt" data-gender="female" onclick="selectGender(this, 'female')">أنثى</div>
-            </div>
-        </div>
-        <button class="btn" onclick="submitVisitor()">دخول الآن</button>
-        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
-    </div>
+    function selectGender(element, gender) {
+        document.querySelectorAll('.gender-opt').forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+        currentUser.gender = gender;
+    }
 
-    <div id="loginScreen" class="screen">
-        <h2>تسجيل دخول الأعضاء</h2>
-        <div class="form-group">
-            <label>اسم المستخدم:</label>
-            <input type="text" placeholder="اسم الحساب">
-        </div>
-        <div class="form-group">
-            <label>كلمة المرور:</label>
-            <input type="password" placeholder="******">
-        </div>
-        <button class="btn btn-success" onclick="alert('استخدم دخول الزوار حالياً!')">تسجيل الدخول</button>
-        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
-    </div>
+    function submitVisitor() {
+        const nameInput = document.getElementById('visitorName').value.trim();
+        if(!nameInput) {
+            alert('الرجاء كتابة اسم مستعار أولاً!');
+            return;
+        }
+        currentUser.username = nameInput;
+        showScreen('roomsScreen'); // ستنقلك فوراً لشاشة الغرف
+    }
 
-    <div id="registerScreen" class="screen">
-        <h2>تسجيل حساب جديد</h2>
-        <button class="btn" onclick="alert('التسجيل مغلق حالياً')">تأكيد التسجيل</button>
-        <button class="btn btn-secondary" style="margin-top:10px;" onclick="showScreen('welcomeScreen')">رجوع</button>
-    </div>
-
-    <div id="roomsScreen" class="screen">
-        <h2>اختر غرفة المحادثة</h2>
-        <div class="rooms-grid">
-            <div class="room-card"><div class="room-title">الغرفة العامة</div><button class="room-btn" onclick="joinRoom('general')">دخول</button></div>
-            <div class="room-card"><div class="room-title">شات اليمن</div><button class="room-btn" onclick="joinRoom('yemen')">دخول</button></div>
-            <div class="room-card"><div class="room-title">شات مصر</div><button class="room-btn" onclick="joinRoom('egypt')">دخول</button></div>
-            <div class="room-card"><div class="room-title">شات الجزائر</div><button class="room-btn" onclick="joinRoom('algeria')">دخول</button></div>
-        </div>
-    </div>
-
-    <div id="chatScreen" class="screen" style="padding:0;">
-        <div class="chat-header">
-            <span id="currentRoomTitle" style="font-weight:bold; color:#38bdf8;">غرفة الشات</span>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button id="adminPanelBtn" class="btn btn-secondary" style="padding:5px 10px; font-size:12px; background: #eab308; color: #000;" onclick="unlockAdminPanel()">إدارة 🛡️</button>
-                <button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="leaveChat()">خروج</button>
-            </div>
-        </div>
+    function joinRoom(roomKey) {
+        currentUser.room = roomKey;
+        document.getElementById('currentRoomTitle').innerText = `غرفة: ${roomKey.toUpperCase()}`;
+        showScreen('chatScreen');
         
-        <div id="adminPanelBox" class="admin-box" style="display: none;">
-            <input type="text" id="targetKickUser" placeholder="اسم المستخدم لطرده..." style="padding: 5px; margin-bottom:5px; width:100%; background:#0f172a; color:#fff; border:1px solid #475569; border-radius:4px;">
-            <button class="btn btn-danger" style="padding: 5px; width:100%; font-size:12px;" onclick="issueAdminKick()">طرد وحظر</button>
-            <button class="btn" style="width: 100%; padding: 5px; font-size: 12px; background: #64748b; margin-top:5px;" onclick="issueClearRoom()">مسح الرسائل</button>
-        </div>
+        // إذا استيقظ السوكت يتم إرسال الحدث، وإلا يدخل المستخدم الغرفة محلياً لحين الاتصال
+        if(socket) {
+            socket.emit('join_room', {
+                room: currentUser.room,
+                username: currentUser.username,
+                roleAr: currentUser.roleAr
+            });
+        }
+    }
 
-        <div id="chatMessages" class="chat-messages"></div>
+    function leaveChat() { location.reload(); }
 
-        <div class="chat-input-bar">
-            <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if(!text) return;
+
+        const timeNow = new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' });
+
+        if(socket) {
+            socket.emit('send_message', {
+                room: currentUser.room,
+                username: currentUser.username,
+                gender: currentUser.gender,
+                text: text,
+                role: currentUser.role,
+                time: timeNow,
+                avatar: ''
+            });
+        } else {
+            // إضافة الرسالة محلياً في واجهتك إذا كان السيرفر لا يزال يتصل
+            appendMessage({ type: 'user', username: currentUser.username, gender: currentUser.gender, text: text, time: timeNow, role: currentUser.role });
+        }
+        input.value = '';
+    }
+
+    function handleKeyPress(event) { if(event.key === 'Enter') sendMessage(); }
+
+    function unlockAdminPanel() {
+        const password = prompt("الرجاء إدخال كلمة مرور الإدارة الموحدة:");
+        if (password === "admin123") {
+            currentUser.role = "admin";
+            currentUser.roleAr = "المدير العام";
+            document.getElementById('adminPanelBox').style.display = 'block';
+            alert("تم تفعيل صلاحيات الإدارة!");
+        } else {
+            alert("كلمة المرور خاطئة!");
+        }
+    }
+
+    function issueAdminKick() {
+        const target = document.getElementById('targetKickUser').value.trim();
+        if(!target || !socket) return;
+        socket.emit('admin_kick', { room: currentUser.room, targetUser: target });
+        document.getElementById('targetKickUser').value = '';
+    }
+
+    function issueClearRoom() {
+        if(confirm("هل أنت متأكد من مسح المحادثات؟") && socket) {
+            socket.emit('clear_room', { room: currentUser.room });
+        }
+    }
+
+    // تجميع مستمعات السوكت لتعمل فقط عند نجاح الاتصال
+    function setupSocketListeners() {
+        socket.on('load_history', (history) => {
+            const container = document.getElementById('chatMessages');
+            if(container) {
+                container.innerHTML = '';
+                history.forEach(msg => appendMessage(msg));
+            }
+        });
+
+        socket.on('receive_message', (msg) => { appendMessage(msg); });
+
+        socket.on('user_banned', (data) => {
+            if(currentUser.username === data.username) {
+                alert("⚠️ لقد تم طردك وحظرك!");
+                location.reload();
+            }
+        });
+
+        socket.on('room_cleared', () => {
+            const container = document.getElementById('chatMessages');
+            if(container) container.innerHTML = '<div class="system-msg">⚙️ تم تصفير المحادثات</div>';
+        });
+    }
+
+    function appendMessage(msg) {
+        const container = document.getElementById('chatMessages');
+        if (!container) return;
+        
+        if(msg.type === 'system') {
+            const sysDiv = document.createElement('div');
+            sysDiv.className = 'system-msg';
+            sysDiv.innerText = msg.text;
+            container.appendChild(sysDiv);
+        } else {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg-container';
+            let nameColor = msg.gender === 'female' ? 'var(--female-color)' : '#0284c7';
+            let roleBadge = msg.role === 'admin' ? '<span class="badge-owner">المدير 🛡️</span>' : '<span class="badge-vip">زائر</span>';
+
+            msgDiv.innerHTML = `
+                <div class="user-avatar"><img src="https://ui-avatars.com{encodeURIComponent(msg.username)}&background=random" alt="avatar"></div>
+                <div class="msg-content-area">
+                    <span class="msg-username" style="color: ${nameColor}">${msg.username} ${roleBadge}</span>
+                    <span class="msg-text">${msg.text}</span>
+                    <span class="msg-time">${msg.time || ''}</span>
+                </div>
+            `;
+            container.appendChild(msgDiv);
+        }
+        container.scrollTop = container.scrollHeight;
+    }
+</script>

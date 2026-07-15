@@ -152,7 +152,30 @@
         </div>
     </div>
 
-    <!-- شاشة المحادثة المباشرة -->
+        <!-- شاشة المحادثة المباشرة المصلحة -->
     <div id="chatScreen" class="screen" style="padding:0;">
         <div class="chat-header">
             <span id="currentRoomTitle" style="font-weight:bold; color:#38bdf8;">غرفة الشات</span>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="adminPanelBtn" class="btn btn-secondary" style="padding:5px 10px; font-size:12px; background: #eab308; color: #000;" onclick="unlockAdminPanel()">إدارة 🛡️</button>
+                <button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="leaveChat()">خروج</button>
+            </div>
+        </div>
+        
+        <div id="adminPanelBox" class="admin-box" style="display: none;">
+            <h4 style="color: #ef4444; margin-bottom: 10px; font-size: 14px;">🛡️ لوحة التحكم في الغرفة المباشرة:</h4>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="targetKickUser" placeholder="اسم المستخدم المراد طرده..." style="flex: 1; padding: 6px; font-size: 13px;">
+                <button class="btn btn-danger" style="padding: 6px 15px; font-size: 13px;" onclick="issueAdminKick()">طرد وحظر فوري</button>
+            </div>
+            <button class="btn" style="width: 100%; padding: 8px; font-size: 13px; background: #64748b;" onclick="issueClearRoom()">🧼 تصفير ومسح محادثات الغرفة بالكامل</button>
+        </div>
+
+        <!-- الـ div الهام جداً الذي كان ناقصاً ويتسبب في تعطيل الأزرار -->
+        <div id="chatMessages" class="chat-messages"></div>
+
+        <div class="chat-input-bar">
+            <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." onkeypress="handleKeyPress(event)">
+            <button class="btn" style="padding:10px 20px;" onclick="sendMessage()">إرسال</button>
+        </div>
+    </div>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شات اليمن الكتابي المطور - الخاص والرموز</title>
+    <script src="https://socket.io"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .tabs { display: flex; justify-content: space-around; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tabs button { background: none; border: none; padding: 10px 15px; font-size: 16px; cursor: pointer; color: #666; font-weight: bold; }
+        .tabs button.active { color: #00a884; border-bottom: 3px solid #00a884; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        button.submit-btn { width: 100%; background: #00a884; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        
+        /* تصميم نظام الشات المطور بثلاثة أعمدة متجاوبة */
+        #chat-interface { display: none; width: 100%; max-width: 1100px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: hidden; height: 85vh; }
+        .chat-container { display: flex; height: 100%; }
+        
+        /* القوائم الجانبية الملونة */
+        .sidebar { width: 22%; background: #2f3e46; color: white; padding: 15px; overflow-y: auto; border-left: 1px solid #354f52; }
+        .user-sidebar { background: #222e35; }
+        .item-title { text-align: center; border-bottom: 1px solid #52796f; padding-bottom: 10px; margin-top: 0; font-size: 15px; }
+        .clickable-item { padding: 10px; background: #354f52; margin-bottom: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-weight: bold; font-size: 14px; transition: 0.2s; }
+        .clickable-item:hover, .active-item { background: #00a884; }
+        
+        /* نافذة الدردشة الرئيسية */
+        .chat-area { width: 56%; display: flex; flex-direction: column; background: #efeae2; position: relative; }
+        .messages-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        .msg { max-width: 75%; padding: 10px 14px; margin: 6px 0; border-radius: 8px; font-size: 15px; }
+        .msg.sent { background: #d9fdd3; align-self: flex-end; border-top-left-radius: 0; }
+        .msg.received { background: white; align-self: flex-start; border-top-right-radius: 0; }
+        .msg.private { border: 2px dashed #ffb703; background: #fff3cd; } /* تمييز خلفية رسائل الخاص باللون الذهبي */
+        .msg .sender { font-size: 12px; font-weight: bold; color: #075e54; margin-bottom: 3px; display: block; }
+        .msg .time { font-size: 10px; color: #777; text-align: left; margin-top: 4px; }
+        .system-msg { text-align: center; color: #555; font-size: 12px; margin: 6px 0; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 4px; }
+        
+        /* أدوات شريط الإدخال وصندوق الرموز */
+        .input-container { position: relative; background: #f0f2f5; padding: 12px; }
+        .input-bar { display: flex; align-items: center; }
+        .input-bar input { flex: 1; margin: 0; border-radius: 20px; padding: 12px 20px; border: 1px solid #ccc; outline: none; }
+        .input-bar button { background: #00a884; color: white; border: none; padding: 12px 25px; border-radius: 20px; margin-right: 8px; cursor: pointer; font-weight: bold; }
+        .emoji-btn { background: #cfd8dc !important; color: #333 !important; padding: 12px 15px !important; margin-left: 5px; font-size: 16px; }
+        
+        /* شبكة توزيع الـ Emojis */
+        .emoji-picker { display: none; position: absolute; bottom: 70px; right: 15px; background: white; border: 1px solid #ccc; border-radius: 8px; padding: 10px; width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10; grid-template-columns: repeat(7, 1fr); gap: 5px; font-size: 22px; text-align: center; }
+        .emoji-picker span { cursor: pointer; transition: 0.1s; user-select: none; }
+        .emoji-picker span:hover { transform: scale(1.3); }
+        
+        /* تنبيه وضبط المحادثة الخاصة */
+        .private-header { display: none; background: #ffb703; color: #222; text-align: center; padding: 8px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #e5a900; }
+        .private-header button { background: none; border: none; font-weight: bold; cursor: pointer; color: red; margin-right: 12px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <!-- 🔐 لوحة تسجيل الدخول والديناميكية -->
+    <div id="auth-interface" class="card">
+        <h2>شات اليمن المطور</h2>
+        <div class="tabs">
+            <button id="tab-visitor" class="active" onclick="switchTab('visitor')">دخول زائر</button>
+            <button id="tab-register" onclick="switchTab('register')">تسجيل عضو</button>
+            <button id="tab-login" onclick="switchTab('login')">دخول الأعضاء</button>
+        </div>
+        <form id="auth-form" onsubmit="submitAuth(event)">
+            <input type="text" id="username" placeholder="اكتب النك نيم (اسم المستخدم)" required>
+            <input type="password" id="password" placeholder="اكتب كلمة المرور الحامية للحساب" style="display:none;">
+            <input type="number" id="age" placeholder="العمر (اختياري)">
+            <select id="gender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select>
+            <button type="submit" class="submit-btn">دخول مباشر للشات</button>
+        </form>
+    </div>
+
+    <!-- 💬 شاشة المحادثة الكاملة بثلاث لوحات تفاعلية -->
+    <div id="chat-interface">
+        <div class="chat-container">
+            <!-- اليمين: الرومات والغرف -->
+            <div class="sidebar">
+                <h3 class="item-title">غرف المحادثة 🇾🇪</h3>
+                <div id="rooms-list"></div>
+            </div>
+            
+            <!-- الوسط: الشات العام والمحادثات الخاصة التفاعلية -->
+            <div class="chat-area">
+                <div id="private-alert" class="private-header">
+                    🔒 محادثة خاصة نشطة الآن مع العضو: <span id="target-name"></span>
+                    <button onclick="exitPrivateMode()">❌ خروج من الخاص للعام</button>
+                </div>
+                <div id="messages-box" class="messages-box"></div>
+                
+                <div class="input-container">
+                    <div id="emoji-picker" class="emoji-picker"></div>
+                    <div class="input-bar">
+                        <button class="emoji-btn" onclick="toggleEmojiPicker()">😊</button>
+                        <input type="text" id="message-input" placeholder="اكتب رسالة هنا للغرفة أو للخاص المفتوح.." onkeypress="if(event.key === 'Enter') sendMsg()">
+                        <button onclick="sendMsg()">إرسال</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- :الأعضاء المتواجدون لايف -->
+            <div class="sidebar user-sidebar">
+                <h3 class="item-title">المتواجدون الآن (اضغط للخاص)</h3>
+                <div id="users-list"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 🔗 رابط سيرفر Render الفعلي والنشط الخاص بك
+    const SERVER_URL = "https://onrender.com";
+    let socket;
+    let currentAction = 'visitor';
+    let loggedUser = null;
+    let currentRoomId = 'main';
+    
+    // متغيرات تتبع حالة الخاص
+    let isPrivateMode = false;
+    let privateTargetSocketId = null;
+    let privateTargetName = "";
+
+    // السمايلات الجاهزة والخاصة بشات اليمن
+    const emojis = ["🌹", "😂", "👋", "😍", "👍", "🇾🇪", "✨", "🤍", "🔥", "🤝", "😎", "🤔", "😭", "💔", "🎉", "👑", "🎵", "☕", "🤩", "📲", "🤫"];
+
+    const picker = document.getElementById('emoji-picker');
+    emojis.forEach(emoji => {
+        const span = document.createElement('span');
+        span.innerText = emoji;
+        span.onclick = () => {
+            document.getElementById('message-input').value += emoji;
+            picker.style.display = 'none';
+        };
+        picker.appendChild(span);
+    });
+
+    function toggleEmojiPicker() {
+        picker.style.display = (picker.style.display === 'grid') ? 'none' : 'grid';
+    }
+
+    function switchTab(action) {
+        currentAction = action;
+        document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${action}`).classList.add('active');
+        document.getElementById('password').style.display = (action === 'visitor') ? 'none' : 'block';
+        document.getElementById('password').required = (action !== 'visitor');
+    }
+
+    async function submitAuth(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const age = document.getElementById('age').value;
+        const gender = document.getElementById('gender').value;
+
+        try {
+            const response = await fetch(`${SERVER_URL}/api/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: currentAction, username, password, age, gender })
+            });
+            const data = await response.json();
+            if (data.success) { loggedUser = data.user; startChatSession(); } else { alert(data.message); }
+        } catch (err) { alert("تعذر الاتصال بالسيرفر الخلفي."); }
+    }
+
+    function startChatSession() {
+        document.getElementById('auth-interface').style.display = 'none';

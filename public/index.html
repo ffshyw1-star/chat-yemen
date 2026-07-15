@@ -100,7 +100,7 @@
                 </div>
             </div>
 
-            <!-- اليسار: الأعضاء المتواجدون لايف -->
+            <!-- :الأعضاء المتواجدون لايف -->
             <div class="sidebar user-sidebar">
                 <h3 class="item-title">المتواجدون الآن (اضغط للخاص)</h3>
                 <div id="users-list"></div>
@@ -109,7 +109,7 @@
     </div>
 
 <script>
-    // 🔗 رابط سيرفر Render الفعلي والنشط
+    // 🔗 رابط سيرفر Render الفعلي والنشط الخاص بك
     const SERVER_URL = "https://onrender.com";
     let socket;
     let currentAction = 'visitor';
@@ -162,7 +162,8 @@
             });
             const data = await response.json();
             if (data.success) { loggedUser = data.user; startChatSession(); } else { alert(data.message); }
-        } catch (err) { alert("تعذر الاتصال بالسيرفر، تأكد من كود السيرفر وحالة ريندر."); }
+        } catch (err) { alert("تعذر الاتصال بالسيرفر الخلفي."); }
     }
 
     function startChatSession() {
+        document.getElementById('auth-interface').style.display = 'none';

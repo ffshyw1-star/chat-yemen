@@ -49,7 +49,7 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 
 .message-row { display: flex; flex-direction: row-reverse; align-items: flex-start; padding: 12px 8px; border-bottom: 1px solid #f9f9f9; width: 100%; }
 .msg-time-meta { width: 110px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-size: 11px; color: var(--text-gray); flex-shrink: 0; padding-top: 4px; }
-.msg-time-meta .dots { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #ccc; cursor: pointer;}
+.msg-time-meta .dots { font-size: 14px; font-weight: bold; letter-spacing: 1px; color: #aaa; cursor: pointer; padding: 0 5px; }
 .msg-content-center { flex: 1; display: flex; flex-direction: column; align-items: flex-end; text-align: right; padding-left: 12px; }
 .user-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
 .user-msg-text { font-size: 14.5px; line-height: 1.5; color: #222; word-break: break-word; }
@@ -81,7 +81,6 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 .nav-menu-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; text-decoration: none; font-size: 11px; gap: 2px; opacity: 0.6; cursor: pointer; }
 .nav-menu-item i { font-size: 19px; }
 .nav-menu-item.active { opacity: 1; color: #00cc99; }
-.nav-menu-item .label-sub { font-size: 9px; color: #8a9aa4; display: block; margin-top: -2px; }
 
 .popup-panel { position: absolute; bottom: 65px; left: 15px; right: 15px; background: #ffffff; border-radius: 12px; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); padding: 15px; z-index: 500; max-height: 250px; overflow-y: auto; }
 .popup-panel h4 { font-size: 15px; margin-bottom: 10px; color: var(--main-blue); border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -90,13 +89,25 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 .drawer-header { background: var(--main-blue); color: white; padding: 15px; font-weight: bold; font-size: 15px; }
 .drawer-list-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .color-swatch { width: 30px; height: 30px; border-radius: 50%; display: inline-block; margin: 5px; cursor: pointer; border: 2px solid #ddd; }
-.radio-top-player { background: #fff3cd; color: #856404; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; border-bottom: 1px solid #ffeeba; }
+
+/* نافذة أزرار الإدارة الجديدة المنبثقة */
+.admin-action-menu {
+  position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1200; display: flex; flex-direction: column; width: 110px;
+}
+.admin-action-menu button {
+  padding: 8px 12px; text-align: right; background: none; border: none; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%;
+}
+.admin-action-menu button:hover { background: #f5f5f5; }
+.admin-action-menu button.btn-danger-action { color: #ff3b30; }
+
 .emoji-popup { position: absolute; bottom: 70px; right: 15px; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); padding: 10px; width: 280px; height: 150px; overflow-y: auto; z-index: 100; }
 .emoji-popup span { font-size: 22px; padding: 4px; cursor: pointer; display: inline-block; }
 </style>
 </head>
 <body>
 
+  <!-- شاشة تسجيل الدخول -->
   <div id="login_page">
     <div class="login-box">
       <h3 style="margin-bottom:15px;">شات اليمن العربي</h3>
@@ -113,6 +124,14 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
     </div>
   </div>
 
+  <!-- لوحة خيارات الإدارة المخفية الديناميكية -->
+  <div class="admin-action-menu hide" id="admin_floating_menu">
+    <button onclick="sendAdminAction('mute')"><i class="fa fa-volume-mute"></i> كتم العضو</button>
+    <button onclick="sendAdminAction('kick')" class="btn-danger-action"><i class="fa fa-sign-out-alt"></i> طرد مؤقت</button>
+    <button onclick="sendAdminAction('ban')" class="btn-danger-action"><i class="fa fa-gavel"></i> حظر نهائي</button>
+  </div>
+
+  <!-- الهيدر العلوي -->
   <div class="top-header-bar">
     <div class="top-header-right"><i class="fa fa-bars" id="menu_drawer_btn"></i></div>
     <div class="top-header-center"><div class="store-pill-btn"><span>Store.</span></div></div>
@@ -126,20 +145,3 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
     </div>
   </div>
 
-  <div class="chat-main-view">
-    <div class="radio-top-player hide" id="radio_player"><span>📻 البث المباشر الإذاعي يعمل...</span></div>
-    <div class="messages-box" id="messages_container"></div>
-
-    <div class="side-drawer" id="side_drawer_panel">
-      <div class="drawer-header">غرف اليمن</div>
-      <div class="drawer-list-item">🟢 الغرفة العامة الرئيسية</div>
-    </div>
-
-    <div class="popup-panel hide" id="active_users_panel">
-      <h4>المتواجدون حالياً (<span id="count_online">0</span>)</h4>
-      <div id="users_online_bind"></div>
-    </div>
-
-    <div class="popup-panel hide" id="options_panel">
-      <h4>إعدادات المظهر</h4>
-      <span class="color-swatch" style="background:#bf55ec" onclick="changeMyColor('#bf55ec')"></span>

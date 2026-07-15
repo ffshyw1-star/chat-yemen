@@ -2,19 +2,28 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors()); // السماح بالاتصال من أي موقع ويب
 
+// تفعيل دمج وعرض ملفات الواجهة الأمامية من مجلد public
+app.use(express.static(path.join(__dirname, 'public'))); 
+
+// توجيه أي مسار HTTP رئيسي إلى صفحة الشات
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*", // استقبال الاتصالات من المتصفحات وهواتف الجوال
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
 
-// تخزين الرسائل مؤقتاً في ذاكرة السيرفر لكل غرفة لحين تصفيرها
+// تخزين الرسائل مؤقتاً في ذاكرة السيرفر
 const roomHistory = {
     general: [],
     yemen: [],
@@ -29,14 +38,16 @@ io.on('connection', (socket) => {
     socket.on('join_room', (data) => {
         socket.join(data.room);
         
-        // إرسال الأرشيف القديم للرسائل للمستخدم لكي يرى المحتوى فور دخوله
+        // إرسال الأرشيف القديم للرسائل للمستخدم فور دخوله
         socket.emit('load_history', roomHistory[data.room] || []);
 
         // بث رسالة النظام لجميع المتواجدين في الغرفة
-        const welcomeText = `${data.username} انضم للغرفة [ رتبة ${data.roleAr} ]`;
+        const welcomeText = `${data.username} انضم للغرفة [ رتبة ${data.roleAr || 'زائر'} ]`;
         const sysMsg = { type: "system", text: welcomeText };
         
-        roomHistory[data.room].push(sysMsg);
+        if (roomHistory[data.room]) {
+            roomHistory[data.room].push(sysMsg);
+        }
         io.to(data.room).emit('receive_message', sysMsg);
     });
 
@@ -47,7 +58,7 @@ io.on('connection', (socket) => {
             username: data.username,
             gender: data.gender,
             text: data.text,
-            role: data.role,
+            role: data.role || "guest", // استقبال الرتبة ديناميكياً (guest أو admin)
             time: data.time,
             avatar: data.avatar
         };
@@ -61,10 +72,12 @@ io.on('connection', (socket) => {
         io.to(data.room).emit('receive_message', userMsg);
     });
 
-    // 3. أمر الطرد والحظر الصادر من رتب الإدارة
+    // 3. أمر الطرد والحظر الصادر من الإدارة
     socket.on('admin_kick', (data) => {
         const kickMsg = { type: "system", text: `[ تم حظر وطرد المستخدم ${data.targetUser} من السيرفر فوراً ]` };
-        roomHistory[data.room].push(kickMsg);
+        if (roomHistory[data.room]) {
+            roomHistory[data.room].push(kickMsg);
+        }
         io.to(data.room).emit('receive_message', kickMsg);
         io.to(data.room).emit('user_banned', { username: data.targetUser });
     });
@@ -82,7 +95,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// تشغيل السيرفر على بورت 3000 أو البورت التلقائي للاستضافة المجانية
+// تشغيل السيرفر على بورت Render التلقائي أو 3000 محلياً
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`سيرفر شات اليمن المطور يعمل بنجاح على البورت ${PORT}`);

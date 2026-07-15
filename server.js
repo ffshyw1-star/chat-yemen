@@ -1,136 +1,98 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
+const path = require('path');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
-
 const server = http.createServer(app);
+
+// إعداد سعة نقل البيانات لاستقبال الصور الكبيرة والمذكرات الصوتية بدون مشاكل
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+  maxHttpBufferSize: 1e7, // 10 ميجابايت
+  cors: { origin: "*" }
 });
 
-// ذاكرة الحفظ السريع البديلة عن MySQL لسرعة استجابة السيرفر المجاني
-const users = [];       
-const activeUsers = {}; 
-const rooms = [         
-    { id: "main", name: "الغرفة العامة الرئيسية", welcome: "مرحباً بك {name} في الملتقى العام لشباب اليمن" },
-    { id: "sanaa", name: "روم صنعاء القديمة", welcome: "أهلاً بك يا {name} في روم عاصمة التاريخ والعراقة" },
-    { id: "aden", name: "روم ثغر اليمن الباسم (عدن)", welcome: "يا مرحباً بنور العين {name} في روم عدن" }
-];
-const wordBlacklist = ["مسبّة1", "مسبّة2"]; 
-const nameBlacklist = ["ادارة", "admin", "مدير", "مشرف"]; 
+// تشغيل الملفات الساكنة (ستضع ملف الـ HTML في مجلد اسمه public)
+app.use(express.static(path.join(__dirname, 'public')));
 
-// API للتوثيق والتسجيل والدخول السريع بدون تفرع صفحات
-app.post('/api/auth', async (req, res) => {
-    const { action, username, password, age, gender } = req.body;
-    if (!username || username.trim() === "") return res.json({ success: false, message: "الاسم غير صالح." });
-    const cleanUsername = username.trim();
+// تخزين قائمة المستخدمين النشطين في الذاكرة
+let activeUsers = {};
 
-    if (nameBlacklist.includes(cleanUsername.toLowerCase())) {
-        return res.json({ success: false, message: "هذا الاسم محظور من قبل الإدارة." });
-    }
-
-    if (action === 'visitor') {
-        const isRegistered = users.find(u => u.username === cleanUsername);
-        if (isRegistered) return res.json({ success: false, message: "الاسم محجوز لعضو مسجل." });
-        return res.json({ success: true, user: { username: cleanUsername, role: "زائر", age: age || 18, gender: gender || "ذكر" } });
-    }
-
-    if (action === 'register') {
-        const userExists = users.find(u => u.username === cleanUsername);
-        if (userExists) return res.json({ success: false, message: "الاسم مسجل مسبقاً لمستخدم آخر." });
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = { username: cleanUsername, password: hashedPassword, age: age || 18, gender: gender || "ذكر", role: "عضو" };
-        users.push(newUser);
-        return res.json({ success: true, user: { username: newUser.username, role: newUser.role } });
-    }
-
-    if (action === 'login') {
-        const user = users.find(u => u.username === cleanUsername);
-        if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.json({ success: false, message: "بيانات الدخول المدخلة خاطئة." });
-        }
-        return res.json({ success: true, user: { username: user.username, role: user.role } });
-    }
-});
-
-app.get('/api/rooms', (req, res) => res.json(rooms));
-
-// اتصالات الـ WebSockets وإدارة الـ Real-time
 io.on('connection', (socket) => {
+  console.log('مستخدم جديد اتصل بالخادم:', socket.id);
 
-    socket.on('join_room', (data) => {
-        socket.join(data.room_id);
-        
-        activeUsers[socket.id] = {
-            id: socket.id,
-            username: data.username,
-            role: data.role,
-            room_id: data.room_id
-        };
-
-        // بث التحديث لقائمة الأعضاء النشطين أونلاين
-        io.emit('update_users_list', Object.values(activeUsers));
-
-        const currentRoom = rooms.find(r => r.id === data.room_id);
-        let welcomeText = currentRoom ? currentRoom.welcome.replace("{name}", data.username) : `أهلاً بك ${data.username}`;
-        socket.emit('system_message', { text: welcomeText });
-        socket.to(data.room_id).emit('system_message', { text: `📢 دخل [${data.role}] ${data.username} إلى الغرفة.` });
+  // 1. استقبال حدث دخول المستخدم وتخزين بياناته
+  socket.on('join_user', (userData) => {
+    activeUsers[socket.id] = {
+      id: socket.id,
+      name: userData.name,
+      role: userData.role,
+      avatar: userData.avatar,
+      color: userData.color
+    };
+    
+    // إرسال القائمة المحدثة للمتواجدين إلى الجميع
+    io.emit('update_users_list', Object.values(activeUsers));
+    
+    // بث رسالة نظام للجميع تفيد بانضمام المستخدم
+    socket.broadcast.emit('system_broadcast', {
+      name: userData.name,
+      role: userData.role,
+      avatar: userData.avatar,
+      type: 'join'
     });
+  });
 
-    // إرسال وتوزيع الرسائل العامة للغرف
-    socket.on('send_message', (data) => {
-        const user = activeUsers[socket.id];
-        if (user) {
-            let messageText = data.text;
-            wordBlacklist.forEach(badWord => { messageText = messageText.replace(new RegExp(badWord, "g"), "***"); });
-
-            // نظام اختصارات الكلمات التلقائي لشات اليمن
-            if (messageText.trim() === 'س1') messageText = 'السلام عليكم ورحمة الله وبركاته 🌹';
-            if (messageText.trim() === 'تيت') messageText = 'برب دقيقة وراجع لكم (BRB) 🕒';
-            if (messageText.trim() === 'غ1') messageText = 'منورين الشات والرووم جميعاً يا غوالي ✨';
-
-            io.to(user.room_id).emit('receive_message', {
-                username: user.username,
-                role: user.role,
-                text: messageText,
-                time: new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' }),
-                room_id: user.room_id
-            });
-        }
+  // 2. استقبال الرسائل النصية وبثها فوراً للجميع
+  socket.on('send_text_message', (msgData) => {
+    const user = activeUsers[socket.id] || msgData;
+    io.emit('receive_message', {
+      type: 'text',
+      name: user.name,
+      role: user.role,
+      avatar: user.avatar,
+      color: user.color,
+      text: msgData.text
     });
+  });
 
-    // معالجة ونقل الرسائل الخاصة بين الطرفين فوراً بدون حفظ خارجي
-    socket.on('send_private_message', (data) => {
-        const sender = activeUsers[socket.id];
-        const targetSocketId = data.to_user_id;
-
-        if (sender && activeUsers[targetSocketId]) {
-            const privatePayload = {
-                from_id: socket.id,
-                from_username: sender.username,
-                text: data.text,
-                time: new Date().toLocaleTimeString('ar-YE', { hour: '2-digit', minute: '2-digit' })
-            };
-            
-            io.to(targetSocketId).emit('receive_private_message', privatePayload);
-            socket.emit('receive_private_message', privatePayload);
-        }
+  // 3. استقبال ملفات الصور المرفوعة وبثها فوراً للجميع
+  socket.on('send_image_message', (imageData) => {
+    const user = activeUsers[socket.id] || imageData;
+    io.emit('receive_message', {
+      type: 'image',
+      name: user.name,
+      role: user.role,
+      avatar: user.avatar,
+      color: user.color,
+      imageSrc: imageData.imageSrc
     });
+  });
 
-    socket.on('disconnect', () => {
-        const user = activeUsers[socket.id];
-        if (user) {
-            socket.to(user.room_id).emit('system_message', { text: `🚶 خرج ${user.username} من الغرفة.` });
-            delete activeUsers[socket.id];
-            io.emit('update_users_list', Object.values(activeUsers));
-        }
+  // 4. استقبال المذكرات الصوتية وبثها فوراً للجميع
+  socket.on('send_voice_message', (voiceData) => {
+    const user = activeUsers[socket.id] || voiceData;
+    io.emit('receive_message', {
+      type: 'voice',
+      name: user.name,
+      role: user.role,
+      avatar: user.avatar,
+      color: user.color
     });
+  });
+
+  // 5. معالجة خروج المستخدم أو انقطاع اتصاله
+  socket.on('disconnect', () => {
+    if (activeUsers[socket.id]) {
+      console.log('مستخدم غادر الشات:', activeUsers[socket.id].name);
+      delete activeUsers[socket.id];
+      io.emit('update_users_list', Object.values(activeUsers));
+    }
+  });
 });
 
+// تشغيل الخادم على المنفذ 3000
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`سيرفر شات اليمن المطور يعمل بنجاح على بورت آمن.`));
+server.listen(PORT, () => {
+  console.log(`خادم الشات يعمل بنجاح على الرابط: http://localhost:${PORT}`);
+});

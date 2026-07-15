@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>شات اليمن الكتابي الاحترافي</title>
+    <!-- استدعاء مكتبة الـ Socket المباشرة المتوافقة مع سيرفرك -->
     <script src="https://socket.io"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -15,30 +16,30 @@
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
         button.submit-btn { width: 100%; background: #00a884; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
-        /* واجهة الشات بعد الدخول */
-        #chat-interface { display: none; width: 100%; max-width: 800px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: hidden; height: 85vh; }
+        /* واجهة غرف الشات */
+        #chat-interface { display: none; width: 100%; max-width: 900px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); overflow: hidden; height: 85vh; }
         .chat-container { display: flex; height: 100%; }
         .rooms-sidebar { width: 30%; background: #2f3e46; color: white; padding: 15px; overflow-y: auto; }
-        .room-item { padding: 12px; background: #354f52; margin-bottom: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-weight: bold; }
-        .room-item:hover { background: #52796f; }
+        .room-item { padding: 12px; background: #354f52; margin-bottom: 8px; border-radius: 6px; cursor: pointer; text-align: center; font-weight: bold; transition: 0.2s; }
+        .room-item:hover, .room-item.active-room { background: #00a884; }
         .chat-area { width: 70%; display: flex; flex-direction: column; background: #efeae2; }
         .messages-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        .msg { max-width: 70%; padding: 10px 14px; margin: 6px 0; border-radius: 8px; font-size: 15px; }
-        .msg.sent { background: #d9fdd3; align-self: flex-end; }
-        .msg.received { background: white; align-self: flex-start; }
+        .msg { max-width: 70%; padding: 10px 14px; margin: 6px 0; border-radius: 8px; font-size: 15px; position: relative; }
+        .msg.sent { background: #d9fdd3; align-self: flex-end; border-top-left-radius: 0; }
+        .msg.received { background: white; align-self: flex-start; border-top-right-radius: 0; }
         .msg .sender { font-size: 12px; font-weight: bold; color: #075e54; margin-bottom: 3px; display: block; }
         .msg .time { font-size: 10px; color: #777; text-align: left; margin-top: 4px; }
-        .system-msg { text-align: center; color: #555; font-size: 13px; margin: 10px 0; font-style: italic; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 4px; }
+        .system-msg { text-align: center; color: #555; font-size: 13px; margin: 10px 0; font-style: italic; background: rgba(0,0,0,0.05); padding: 6px; border-radius: 4px; }
         .input-bar { display: flex; padding: 15px; background: #f0f2f5; }
-        .input-bar input { flex: 1; margin: 0; border-radius: 20px; padding: 12px 20px; }
+        .input-bar input { flex: 1; margin: 0; border-radius: 20px; padding: 12px 20px; border: 1px solid #ccc; outline: none; }
         .input-bar button { background: #00a884; color: white; border: none; padding: 0 25px; border-radius: 20px; margin-right: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- 🔐 لوحة تسجيل الدخول والديناميكية -->
+    <!-- 🔐 بوابة الدخول والتسجيل -->
     <div id="auth-interface" class="card">
-        <h2 id="auth-title">شات اليمن الكتابي</h2>
+        <h2>شات اليمن الكتابي</h2>
         <div class="tabs">
             <button id="tab-visitor" class="active" onclick="switchTab('visitor')">دخول زائر</button>
             <button id="tab-register" onclick="switchTab('register')">تسجيل عضو</button>
@@ -46,8 +47,8 @@
         </div>
 
         <form id="auth-form" onsubmit="submitAuth(event)">
-            <input type="text" id="username" placeholder="اسم المستخدم أو النك نيم" required>
-            <input type="password" id="password" placeholder="كلمة المرور" style="display:none;">
+            <input type="text" id="username" placeholder="اكتب النك نيم (اسم المستخدم)" required>
+            <input type="password" id="password" placeholder="اكتب كلمة المرور" style="display:none;">
             <input type="number" id="age" placeholder="العمر (اختياري)" min="12" max="99">
             <select id="gender">
                 <option value="ذكر">ذكر</option>
@@ -57,17 +58,17 @@
         </form>
     </div>
 
-    <!-- 💬 واجهة غرف الشات بعد تسجيل الدخول المباشر -->
+    <!-- 💬 واجهة غرف المحادثة بعد الدخول -->
     <div id="chat-interface">
         <div class="chat-container">
             <div class="rooms-sidebar">
-                <h3>الغرف والرومات</h3>
-                <div id="rooms-list"><!-- الغرف تظهر هنا تلقائياً --></div>
+                <h3 style="text-align: center; border-bottom: 1px solid #52796f; padding-bottom: 10px;">رومات اليمن 🇾🇪</h3>
+                <div id="rooms-list"></div>
             </div>
             <div class="chat-area">
                 <div id="messages-box" class="messages-box"></div>
                 <div class="input-bar">
-                    <input type="text" id="message-input" placeholder="اكتب رسالة.. (جرب اختصار س1 أو غ1)" onkeypress="if(event.key === 'Enter') sendMsg()">
+                    <input type="text" id="message-input" placeholder="اكتب رسالتك هنا.. (جرب اختصار س1 أو غ1)" onkeypress="if(event.key === 'Enter') sendMsg()">
                     <button onclick="sendMsg()">إرسال</button>
                 </div>
             </div>
@@ -75,7 +76,7 @@
     </div>
 
 <script>
-    // 🔗 رابط خادم Render المباشر الخاص بك
+    // 🔗 الربط المباشر بسيرفر الـ Render الخاص بك لايف
     const SERVER_URL = "https://onrender.com";
     let socket;
     let currentAction = 'visitor';
@@ -87,7 +88,6 @@
         document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
         document.getElementById(`tab-${action}`).classList.add('active');
 
-        // إخفاء وإظهار الحقول حسب الاختيار
         document.getElementById('password').style.display = (action === 'visitor') ? 'none' : 'block';
         document.getElementById('password').required = (action !== 'visitor');
         document.getElementById('age').style.display = (action === 'login') ? 'none' : 'block';
@@ -101,19 +101,23 @@
         const age = document.getElementById('age').value;
         const gender = document.getElementById('gender').value;
 
-        // إرسال البيانات مباشرة لسيرفر الـ Node.js
-        const response = await fetch(`${SERVER_URL}/api/auth`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: currentAction, username, password, age, gender })
-        });
+        // إرسال طلب التوثيق للسيرفر المباشر
+        try {
+            const response = await fetch(`${SERVER_URL}/api/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: currentAction, username, password, age, gender })
+            });
 
-        const data = await response.json();
-        if (data.success) {
-            loggedUser = data.user;
-            startChatSession();
-        } else {
-            alert(data.message);
+            const data = await response.json();
+            if (data.success) {
+                loggedUser = data.user;
+                startChatSession();
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert("خطأ في الاتصال بالسيرفر، تأكد أن السيرفر يعمل لايف.");
         }
     }
 
@@ -121,20 +125,19 @@
         document.getElementById('auth-interface').style.display = 'none';
         document.getElementById('chat-interface').style.display = 'block';
 
-        // بدء اتصال الـ Socket المباشر بالريندر
+        // فتح اتصال سوكيت حقيقي وفوري
         socket = io(SERVER_URL);
 
-        // الانضمام للروم الافتراضي
+        // الانضمام للروم الرئيسي فوراً
         socket.emit('join_room', {
             username: loggedUser.username,
             role: loggedUser.role,
             room_id: currentRoomId
         });
 
-        // جلب الغرف المتوفرة من السيرفر
         loadRooms();
 
-        // الاستماع للرسائل القادمة
+        // استقبال وبث رسائل المستخدمين
         socket.on('receive_message', (msg) => {
             if(msg.room_id === currentRoomId) {
                 const box = document.getElementById('messages-box');
@@ -150,6 +153,7 @@
             }
         });
 
+        // استقبال رسائل تنبيهات النظام
         socket.on('system_message', (msg) => {
             const box = document.getElementById('messages-box');
             box.innerHTML += `<div class="system-msg">${msg.text}</div>`;
@@ -163,13 +167,19 @@
         const list = document.getElementById('rooms-list');
         list.innerHTML = "";
         rooms.forEach(r => {
-            list.innerHTML += `<div class="room-item" onclick="switchRoom('${r.id}')">${r.name}</div>`;
+            const activeClass = r.id === currentRoomId ? 'active-room' : '';
+            list.innerHTML += `<div class="room-item ${activeClass}" id="rm-${r.id}" onclick="switchRoom('${r.id}')">${r.name}</div>`;
         });
     }
 
     function switchRoom(roomId) {
         if(roomId === currentRoomId) return;
         document.getElementById('messages-box').innerHTML = "";
+        
+        // تعديل الشكل النشط للروم في القائمة
+        document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active-room'));
+        document.getElementById(`rm-${roomId}`).classList.add('active-room');
+        
         currentRoomId = roomId;
         socket.emit('join_room', {
             username: loggedUser.username,

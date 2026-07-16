@@ -12,14 +12,16 @@ const io = new Server(server, {
   cors: { origin: "*" }
 });
 
+// توجيه السيرفر لقراءة ملفات الواجهة من مجلد public
 app.use(express.static(path.join(__dirname, 'public')));
 
+// الاتصال بقاعدة البيانات
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yemen_chat_db';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
   .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
 
-// نموذج الرسائل
+// نموذج حفظ الرسائل
 const MessageSchema = new mongoose.Schema({
   type: String,
   name: String,
@@ -33,13 +35,13 @@ const MessageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', MessageSchema);
 
 let activeUsers = {};
-let mutedUsers = {}; // قائمة المستخدمين المكتومين مؤقتاً
-let bannedIPs = {};  // قائمة المحظورين (يمكن تطويرها لاحقاً بقاعدة بيانات)
+let mutedUsers = {}; 
+let bannedIPs = {};  
 
 io.on('connection', async (socket) => {
   console.log('مستخدم جديد اتصل بالسيرفر:', socket.id);
 
-  // جلب سجل الشات
+  // جلب آخر 50 رسالة من السجل فور دخول المستخدم
   try {
     const oldMessages = await Message.find().sort({ timestamp: -1 }).limit(50);
     socket.emit('load_chat_history', oldMessages.reverse());
@@ -47,9 +49,8 @@ io.on('connection', async (socket) => {
     console.error(err);
   }
 
-  // استقبال حدث دخول المستخدم
+  // استقبال حدث دخول المستخدم وتخزين هويته وسوكيت الآيدي الخاص به
   socket.on('join_user', (userData) => {
-    // التحقق من الحظر
     if (bannedIPs[userData.name]) {
       socket.emit('admin_action_received', { action: 'banned_alert' });
       socket.disconnect();
@@ -60,20 +61,20 @@ io.on('connection', async (socket) => {
       id: socket.id,
       name: userData.name,
       role: userData.role,
-      avatar: userData.avatar,
-      color: userData.color
+      avatar: userData.avatar || 'https://placeholder.com',
+      color: userData.color || '#000000'
     };
     
     io.emit('update_users_list', Object.values(activeUsers));
   });
 
-  // التحقق من صلاحية الإدارة للعمليات الحمائية
+  // فحص رتب الحماية الإدارية
   const isManager = (role) => ['mod', 'admin', 'owner'].includes(role);
 
-  // تنفيذ الأوامر الإدارية (كتم، طرد، حظر)
+  // تنفيذ الأوامر الإدارية (كتم، طرد، حظر) مع إرسال هوية المستخدم المستهدف وسوكيت الآيدي الخاص به
   socket.on('admin_execute_action', (data) => {
     const adminUser = activeUsers[socket.id];
-    if (!adminUser || !isManager(adminUser.role)) return; // حماية السيرفر من الاختراق
+    if (!adminUser || !isManager(adminUser.role)) return; 
 
     const targetSocketId = data.targetId;
     const targetUser = activeUsers[targetSocketId];
@@ -95,7 +96,7 @@ io.on('connection', async (socket) => {
     }
   });
 
-  // استقبال وحفظ الرسائل النصية مع فحص الكتم
+  // استقبال وحفظ الرسائل النصية
   socket.on('send_text_message', async (msgData) => {
     const user = activeUsers[socket.id];
     if (!user) return;
@@ -110,21 +111,7 @@ io.on('connection', async (socket) => {
     } catch (err) { console.error(err); }
   });
 
-  // استقبال وحفظ رسائل الصور مع فحص الكتم
-  socket.on('send_image_message', async (imageData) => {
-    const user = activeUsers[socket.id];
-    if (!user) return;
-    if (mutedUsers[user.name]) return socket.emit('admin_action_received', { action: 'still_muted' });
-
-    const newImgMsg = new Message({
-      type: 'image', name: user.name, role: user.role, avatar: user.avatar, color: user.color, imageSrc: imageData.imageSrc
-    });
-    try {
-      await newImgMsg.save();
-      io.emit('receive_message', newImgMsg);
-    } catch (err) { console.error(err); }
-  });
-
+  // معالجة قطع الاتصال وخروج العضو
   socket.on('disconnect', () => {
     if (activeUsers[socket.id]) {
       delete activeUsers[socket.id];

@@ -1,126 +1,110 @@
+
+
+
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const { Server } = require("socket.io");
+const multer = require('multer');
 const path = require('path');
-const mongoose = require('mongoose');
+const cors = require('cors');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" }, trustProxy: true });
 
-const io = new Server(server, {
-  maxHttpBufferSize: 1e7,
-  cors: { origin: "*" }
-});
+app.use(cors());
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
+if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
+const DATA_DIR = './data';
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 
-// توجيه السيرفر لقراءة ملفات الواجهة من مجلد public
-app.use(express.static(path.join(__dirname, 'public')));
+const BANS_FILE = path.join(DATA_DIR, 'bans.json');
+const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const MUTED_FILE = path.join(DATA_DIR, 'muted.json');
+const MAX_MESSAGES = 100;
 
-// الاتصال بقاعدة البيانات
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yemen_chat_db';
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
-  .catch(err => console.error('❌ خطأ في الاتصال بقاعدة البيانات:', err));
+const loadJSON = (file, d = {}) => fs.existsSync(file)? JSON.parse(fs.readFileSync(file, 'utf8')) : d;
+const saveJSON = (file, data) => fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
 
-// نموذج حفظ الرسائل
-const MessageSchema = new mongoose.Schema({
-  type: String,
-  name: String,
-  role: String,
-  avatar: String,
-  color: String,
-  text: String,
-  imageSrc: String,
-  timestamp: { type: Date, default: Date.now }
-});
-const Message = mongoose.model('Message', MessageSchema);
+let bannedIPs = loadJSON(BANS_FILE);
+let chatHistory = loadJSON(MESSAGES_FILE, { 'عام': [], 'تعارف': [], 'اليمن': [], 'فلة': [] });
+let globalMuted = loadJSON(MUTED_FILE, []);
 
-let activeUsers = {};
-let mutedUsers = {}; 
-let bannedIPs = {};  
+let users = {};
+let rooms = { 'عام': [], 'تعارف': [], 'اليمن': [], 'فلة': [] };
+const ADMINS = ['admin', 'مدير'];
 
-io.on('connection', async (socket) => {
-  console.log('مستخدم جديد اتصل بالسيرفر:', socket.id);
+const getIP = socket => socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() || socket.handshake.address;
+const saveBans = () => saveJSON(BANS_FILE, bannedIPs);
+const saveMuted = () => saveJSON(MUTED_FILE, globalMuted);
+const saveMessage = (room, msg) => {
+  chatHistory[room] = chatHistory[room] || [];
+  chatHistory[room].push(msg);
+  if (chatHistory[room].length > MAX_MESSAGES) chatHistory[room].shift();
+  saveJSON(MESSAGES_FILE, chatHistory);
+};
 
-  // جلب آخر 50 رسالة من السجل فور دخول المستخدم
-  try {
-    const oldMessages = await Message.find().sort({ timestamp: -1 }).limit(50);
-    socket.emit('load_chat_history', oldMessages.reverse());
-  } catch (err) {
-    console.error(err);
-  }
+const imgStorage = multer.diskStorage({ destination: './uploads/', filename: (req, f, cb) => cb(null, 'img_' + Date.now() + path.extname(f.originalname)) });
+const audioStorage = multer.diskStorage({ destination: './uploads/', filename: (req, f, cb) => cb(null, 'audio_' + Date.now() + '.webm') });
+app.post('/upload', uploadImg = multer({ storage: imgStorage }).single('image'), (req, res) => res.json({ url: '/uploads/' + req.file.filename }));
+app.post('/upload-audio', uploadAudio = multer({ storage: audioStorage }).single('audio'), (req, res) => res.json({ url: '/uploads/' + req.file.filename }));
 
-  // استقبال حدث دخول المستخدم وتخزين هويته وسوكيت الآيدي الخاص به
-  socket.on('join_user', (userData) => {
-    if (bannedIPs[userData.name]) {
-      socket.emit('admin_action_received', { action: 'banned_alert' });
-      socket.disconnect();
-      return;
-    }
+io.on('connection', (socket) => {
+  const ip = getIP(socket);
+  if (bannedIPs[ip] && (bannedIPs[ip].expire === null || bannedIPs[ip].expire > Date.now())) {
+    socket.emit('banned', `انت محظور: ${bannedIPs[ip].reason}`);
+    return socket.disconnect(true);
+  } else if (bannedIPs[ip]) { delete bannedIPs[ip]; saveBans(); }
 
-    activeUsers[socket.id] = {
-      id: socket.id,
-      name: userData.name,
-      role: userData.role,
-      avatar: userData.avatar || 'https://placeholder.com',
-      color: userData.color || '#000000'
-    };
-    
-    io.emit('update_users_list', Object.values(activeUsers));
+  socket.on('join', (u) => {
+    const isAdmin = ADMINS.includes(u.name.toLowerCase());
+    users[socket.id] = {...u, id: socket.id, room: 'عام', isAdmin, ip};
+    socket.join('عام'); rooms['عام'].push(socket.id);
+    io.to('عام').emit('user joined', users[socket.id]);
+    socket.emit('users list', rooms['عام'].map(id => users[id]));
+    socket.emit('you are', {id: socket.id, isAdmin});
+    socket.emit('chat history', chatHistory['عام'] || []);
+    if (globalMuted.includes(socket.id)) socket.emit('you muted', true);
   });
 
-  // فحص رتب الحماية الإدارية
-  const isManager = (role) => ['mod', 'admin', 'owner'].includes(role);
-
-  // تنفيذ الأوامر الإدارية (كتم، طرد، حظر) مع إرسال هوية المستخدم المستهدف وسوكيت الآيدي الخاص به
-  socket.on('admin_execute_action', (data) => {
-    const adminUser = activeUsers[socket.id];
-    if (!adminUser || !isManager(adminUser.role)) return; 
-
-    const targetSocketId = data.targetId;
-    const targetUser = activeUsers[targetSocketId];
-    if (!targetUser) return;
-
-    if (data.action === 'mute') {
-      mutedUsers[targetUser.name] = true;
-      io.to(targetSocketId).emit('admin_action_received', { action: 'mute', duration: 60 });
-      io.emit('system_broadcast', { name: targetUser.name, type: 'mute_alert' });
-    } 
-    else if (data.action === 'kick') {
-      io.to(targetSocketId).emit('admin_action_received', { action: 'kick' });
-      io.emit('system_broadcast', { name: targetUser.name, type: 'kick_alert' });
-    } 
-    else if (data.action === 'ban') {
-      bannedIPs[targetUser.name] = true;
-      io.to(targetSocketId).emit('admin_action_received', { action: 'kick' });
-      io.emit('system_broadcast', { name: targetUser.name, type: 'ban_alert' });
-    }
+  socket.on('joinRoom', (r) => {
+    const user = users[socket.id]; if (!user) return;
+    socket.leave(user.room); rooms[user.room] = rooms[user.room].filter(id => id!== socket.id);
+    io.to(user.room).emit('user left', user.name);
+    user.room = r; socket.join(r); rooms[r].push(socket.id);
+    io.to(r).emit('user joined', user);
+    socket.emit('users list', rooms[r].map(id => users[id]));
+    socket.emit('chat history', chatHistory[r] || []);
   });
 
-  // استقبال وحفظ الرسائل النصية
-  socket.on('send_text_message', async (msgData) => {
-    const user = activeUsers[socket.id];
-    if (!user) return;
-    if (mutedUsers[user.name]) return socket.emit('admin_action_received', { action: 'still_muted' });
-
-    const newMsg = new Message({
-      type: 'text', name: user.name, role: user.role, avatar: user.avatar, color: user.color, text: msgData.text
-    });
-    try {
-      await newMsg.save();
-      io.emit('receive_message', newMsg);
-    } catch (err) { console.error(err); }
+  socket.on('message', (d) => {
+    const user = users[socket.id]; if (!user || globalMuted.includes(socket.id)) return;
+    const msg = {id: Date.now(), type: d.type, content: d.content, user: {name: user.name, gender: user.gender, id: user.id}, time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})};
+    if (d.pm) {
+      const t = io.sockets.sockets.get(d.pm);
+      if (t) { t.emit('pm message', msg); socket.emit('pm message', msg); }
+    } else { saveMessage(user.room, msg); io.to(user.room).emit('message', msg); }
   });
 
-  // معالجة قطع الاتصال وخروج العضو
-  socket.on('disconnect', () => {
-    if (activeUsers[socket.id]) {
-      delete activeUsers[socket.id];
-      io.emit('update_users_list', Object.values(activeUsers));
-    }
+  socket.on('mute user', (id) => { if(users[socket.id]?.isAdmin &&!globalMuted.includes(id)){ globalMuted.push(id); saveMuted(); io.to(id).emit('you muted', true); io.to(users[socket.id].room).emit('system', `${users[id].name} تم كتمه`); } });
+  socket.on('unmute user', (id) => { if(users[socket.id]?.isAdmin){ globalMuted = globalMuted.filter(x => x!== id); saveMuted(); io.to(id).emit('you muted', false); io.to(users[socket.id].room).emit('system', `${users[id].name} فك كتم`); } });
+  socket.on('kick user', (id) => { if(users[socket.id]?.isAdmin){ io.to(id).emit('kicked', 'تم طردك'); io.sockets.sockets.get(id)?.disconnect(true); } });
+  socket.on('ban user', (d) => {
+    if(!users[socket.id]?.isAdmin) return;
+    const t = users[d.targetId]; if(!t) return;
+    bannedIPs[t.ip] = {reason: d.reason||'مخالفة', expire: d.hours? Date.now()+d.hours*3600000:null, by: users[socket.id].name};
+    saveBans();
+    io.to(d.targetId).emit('banned', `تم حظرك: ${bannedIPs[t.ip].reason}`);
+    io.sockets.sockets.get(d.targetId)?.disconnect(true);
+    io.to(users[socket.id].room).emit('system', `${t.name} تم حظره ${d.hours? d.hours+' ساعة':'دائم'}`);
   });
+  socket.on('unban ip', (ip) => { if(users[socket.id]?.isAdmin){ delete bannedIPs[ip]; saveBans(); io.to(users[socket.id].room).emit('system', `فك حظر ${ip}`); } });
+  socket.on('get bans', () => { if(users[socket.id]?.isAdmin) socket.emit('bans list', bannedIPs); });
+  socket.on('save settings', (s) => { if(users[socket.id]){ users[socket.id].font=s.font; users[socket.id].color=s.color; } });
+  socket.on('disconnect', () => { const u=users[socket.id]; if(u){ rooms[u.room]=rooms[u.room].filter(x=>x!==socket.id); io.to(u.room).emit('user left', u.name); delete users[socket.id]; } });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 خادم التحكم الإداري يعمل على: http://localhost:${PORT}`);
-});
+setInterval(()=>{ saveBans(); saveJSON(MESSAGES_FILE, chatHistory); saveMuted(); }, 30000);
+server.listen(3000, ()=>console.log(`http://localhost:3000`));

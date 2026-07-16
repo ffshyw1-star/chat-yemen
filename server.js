@@ -1,3 +1,6 @@
+
+
+
 const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
@@ -13,7 +16,6 @@ const io = new Server(server, { cors: { origin: "*" }, trustProxy: true });
 app.use(cors());
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
-
 if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
 const DATA_DIR = './data';
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
@@ -34,13 +36,7 @@ let users = {};
 let rooms = { 'عام': [], 'تعارف': [], 'اليمن': [], 'فلة': [] };
 const ADMINS = ['admin', 'مدير'];
 
-// إصلاح دالة جلب الأيبي لضمان استقرار السيرفر على Render وعدم الانهيار
-const getIP = socket => {
-  const forwarded = socket.handshake.headers['x-forwarded-for'];
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return socket.handshake.address;
-};
-
+const getIP = socket => socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() || socket.handshake.address;
 const saveBans = () => saveJSON(BANS_FILE, bannedIPs);
 const saveMuted = () => saveJSON(MUTED_FILE, globalMuted);
 const saveMessage = (room, msg) => {
@@ -52,14 +48,8 @@ const saveMessage = (room, msg) => {
 
 const imgStorage = multer.diskStorage({ destination: './uploads/', filename: (req, f, cb) => cb(null, 'img_' + Date.now() + path.extname(f.originalname)) });
 const audioStorage = multer.diskStorage({ destination: './uploads/', filename: (req, f, cb) => cb(null, 'audio_' + Date.now() + '.webm') });
-app.post('/upload', multer({ storage: imgStorage }).single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file' });
-  res.json({ url: '/uploads/' + req.file.filename });
-});
-app.post('/upload-audio', multer({ storage: audioStorage }).single('audio'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No audio' });
-  res.json({ url: '/uploads/' + req.file.filename });
-});
+app.post('/upload', uploadImg = multer({ storage: imgStorage }).single('image'), (req, res) => res.json({ url: '/uploads/' + req.file.filename }));
+app.post('/upload-audio', uploadAudio = multer({ storage: audioStorage }).single('audio'), (req, res) => res.json({ url: '/uploads/' + req.file.filename }));
 
 io.on('connection', (socket) => {
   const ip = getIP(socket);
@@ -69,13 +59,11 @@ io.on('connection', (socket) => {
   } else if (bannedIPs[ip]) { delete bannedIPs[ip]; saveBans(); }
 
   socket.on('join', (u) => {
-    if(!u || !u.name) return;
     const isAdmin = ADMINS.includes(u.name.toLowerCase());
-    users[socket.id] = { name: u.name, gender: u.gender || '1', id: socket.id, room: 'عام', isAdmin, ip, color: '#000000', font: 'Tajawal' };
-    socket.join('عام'); 
-    rooms['عام'].push(socket.id);
+    users[socket.id] = {...u, id: socket.id, room: 'عام', isAdmin, ip};
+    socket.join('عام'); rooms['عام'].push(socket.id);
     io.to('عام').emit('user joined', users[socket.id]);
-    socket.emit('users list', rooms['عام'].map(id => users[id]).filter(Boolean));
+    socket.emit('users list', rooms['عام'].map(id => users[id]));
     socket.emit('you are', {id: socket.id, isAdmin});
     socket.emit('chat history', chatHistory['عام'] || []);
     if (globalMuted.includes(socket.id)) socket.emit('you muted', true);
@@ -83,29 +71,25 @@ io.on('connection', (socket) => {
 
   socket.on('joinRoom', (r) => {
     const user = users[socket.id]; if (!user) return;
-    socket.leave(user.room); 
-    if(rooms[user.room]) rooms[user.room] = rooms[user.room].filter(id => id !== socket.id);
+    socket.leave(user.room); rooms[user.room] = rooms[user.room].filter(id => id!== socket.id);
     io.to(user.room).emit('user left', user.name);
-    user.room = r; 
-    socket.join(r); 
-    if(!rooms[r]) rooms[r] = [];
-    rooms[r].push(socket.id);
+    user.room = r; socket.join(r); rooms[r].push(socket.id);
     io.to(r).emit('user joined', user);
-    socket.emit('users list', rooms[r].map(id => users[id]).filter(Boolean));
+    socket.emit('users list', rooms[r].map(id => users[id]));
     socket.emit('chat history', chatHistory[r] || []);
   });
 
   socket.on('message', (d) => {
     const user = users[socket.id]; if (!user || globalMuted.includes(socket.id)) return;
-    const msg = {id: Date.now(), type: d.type, content: d.content, color: user.color, font: user.font, user: {name: user.name, gender: user.gender, id: user.id}, time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})};
+    const msg = {id: Date.now(), type: d.type, content: d.content, user: {name: user.name, gender: user.gender, id: user.id}, time: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute: '2-digit'})};
     if (d.pm) {
       const t = io.sockets.sockets.get(d.pm);
       if (t) { t.emit('pm message', msg); socket.emit('pm message', msg); }
     } else { saveMessage(user.room, msg); io.to(user.room).emit('message', msg); }
   });
 
-  socket.on('mute user', (id) => { if(users[socket.id]?.isAdmin && !globalMuted.includes(id)){ globalMuted.push(id); saveMuted(); io.to(id).emit('you muted', true); if(users[id]) io.to(users[socket.id].room).emit('system', `${users[id].name} تم كتمه`); } });
-  socket.on('unmute user', (id) => { if(users[socket.id]?.isAdmin){ globalMuted = globalMuted.filter(x => x !== id); saveMuted(); io.to(id).emit('you muted', false); if(users[id]) io.to(users[socket.id].room).emit('system', `${users[id].name} فك كتم`); } });
+  socket.on('mute user', (id) => { if(users[socket.id]?.isAdmin &&!globalMuted.includes(id)){ globalMuted.push(id); saveMuted(); io.to(id).emit('you muted', true); io.to(users[socket.id].room).emit('system', `${users[id].name} تم كتمه`); } });
+  socket.on('unmute user', (id) => { if(users[socket.id]?.isAdmin){ globalMuted = globalMuted.filter(x => x!== id); saveMuted(); io.to(id).emit('you muted', false); io.to(users[socket.id].room).emit('system', `${users[id].name} فك كتم`); } });
   socket.on('kick user', (id) => { if(users[socket.id]?.isAdmin){ io.to(id).emit('kicked', 'تم طردك'); io.sockets.sockets.get(id)?.disconnect(true); } });
   socket.on('ban user', (d) => {
     if(!users[socket.id]?.isAdmin) return;
@@ -119,7 +103,7 @@ io.on('connection', (socket) => {
   socket.on('unban ip', (ip) => { if(users[socket.id]?.isAdmin){ delete bannedIPs[ip]; saveBans(); io.to(users[socket.id].room).emit('system', `فك حظر ${ip}`); } });
   socket.on('get bans', () => { if(users[socket.id]?.isAdmin) socket.emit('bans list', bannedIPs); });
   socket.on('save settings', (s) => { if(users[socket.id]){ users[socket.id].font=s.font; users[socket.id].color=s.color; } });
-  socket.on('disconnect', () => { const u=users[socket.id]; if(u){ if(rooms[u.room]) rooms[u.room]=rooms[u.room].filter(x=>x!==socket.id); io.to(u.room).emit('user left', u.name); delete users[socket.id]; } });
+  socket.on('disconnect', () => { const u=users[socket.id]; if(u){ rooms[u.room]=rooms[u.room].filter(x=>x!==socket.id); io.to(u.room).emit('user left', u.name); delete users[socket.id]; } });
 });
 
 setInterval(()=>{ saveBans(); saveJSON(MESSAGES_FILE, chatHistory); saveMuted(); }, 30000);

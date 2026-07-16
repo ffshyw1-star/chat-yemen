@@ -6,10 +6,10 @@
   <title>شات اليمن | شات اليمن العربي</title>
 
   <!-- استدعاء خطوط جوجل -->
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Cairo&family=Amiri&display=swap" rel="stylesheet" />
+  <link href="https://googleapis.com" rel="stylesheet" />
 
   <!-- استدعاء فونت أوسم للأيقونات -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="https://cloudflare.com" />
 
   <style>
     /* تعريف ألوان وخطوط عامة باستخدام متغيرات CSS */
@@ -76,7 +76,7 @@
 
     /* القسم الرئيسي مع خلفية */
     .main {
-      background: #00242e url('https://i.imgur.com/8KmCThn.jpg') no-repeat center fixed;
+      background: #00242e url('https://imgur.com') no-repeat center fixed;
       background-size: cover;
       min-height: 80vh;
       padding: 20px;
@@ -200,15 +200,13 @@
     /* واجهة الشات */
     #chat_app {
       display: none;
-      height: 100vh;
+      height: 85vh;
       max-width: 1200px;
-      margin: 20px auto;
+      margin: 0 auto;
       background: #fff;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       border-radius: 10px;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
 
     /* تخطيط الشات */
@@ -240,6 +238,10 @@
       user-select: none;
     }
 
+    .sidebar-header span {
+      color: #fff;
+    }
+
     /* زر الإعدادات */
     .settings-btn {
       background: rgba(255, 255, 255, 0.2);
@@ -249,6 +251,10 @@
       font-size: 13px;
       margin-right: 5px;
       transition: background-color 0.3s ease;
+    }
+
+    .settings-btn i {
+      color: #fff;
     }
 
     .settings-btn:hover {
@@ -302,11 +308,6 @@
     .user-item:hover,
     .user-item.pm-active {
       background: #e0e0e0;
-    }
-
-    .user-item.muted {
-      opacity: 0.5;
-      cursor: default;
     }
 
     /* صورة المستخدم الدائرية */
@@ -390,164 +391,50 @@
       color: #fff;
       margin: 0;
     }
-
-    .logout-btn {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .logout-btn:hover {
-      background: rgba(255, 255, 255, 0.4);
-    }
-
-    /* منطقة الرسائل */
-    .messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      scroll-behavior: smooth;
-      background-color: var(--chat-bg);
-    }
-
-    /* رسالة واحدة */
-    .msg {
-      max-width: 75%;
-      padding: 8px 12px;
-      border-radius: 8px;
-      line-height: 1.6;
-      word-wrap: break-word;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    /* رسالة من المستخدم */
-    .msg.me {
-      align-self: flex-end;
-      background-color: var(--msg-me);
-      color: #000;
-    }
-
-    /* رسالة من مستخدم آخر */
-    .msg.other {
-      align-self: flex-start;
-      background-color: var(--msg-other);
-      color: #000;
-    }
   </style>
 </head>
 <body>
 
-  <!-- رأس الصفحة -->
-  <header class="header" role="banner">
-    <a href="#" aria-label="شات اليمن">شات اليمن</a>
+  <!-- ترويسة الموقع الأساسية -->
+  <header class="header">
+    <a href="#">شات اليمن</a>
     <b>شات اليمن العربي</b>
   </header>
 
-  <!-- القسم الرئيسي -->
-  <main class="main" role="main">
-    <div class="container" aria-live="polite" aria-atomic="true">
-      <!-- غرفة اختيار المستخدم -->
-      <section class="room" aria-label="اختيار غرفة الدردشة">
-        <button class="btn" id="login_btn" type="button" aria-haspopup="dialog" aria-controls="login_form">تسجيل الدخول</button>
-        <button class="btn" id="guest_btn" type="button">الدخول كضيف</button>
+  <!-- القسم الرئيسي للموقع -->
+  <main class="main">
+    <div class="container">
+      
+      <!-- رسالة الخطأ العامة -->
+      <div id="error_msg" class="error"></div>
+
+      <!-- صندوق اختيار نوع الدخول (الأعضاء / الزوار) -->
+      <section id="rooms_box" class="room">
+        <button id="show_member_btn" class="btn">تسجيل دخول الأعضاء</button>
+        <button id="show_guest_btn" class="btn" id="guest_btn">دخول الزوار</button>
       </section>
 
-      <!-- نموذج تسجيل الدخول -->
-      <section class="login" id="login_form" role="dialog" aria-modal="true" aria-labelledby="login_title" tabindex="-1">
-        <h2 id="login_title" style="margin-bottom:15px;">تسجيل الدخول</h2>
-        <form action="#" method="post" novalidate>
-          <input type="text" name="username" id="username" placeholder="اسم المستخدم" required aria-required="true" autocomplete="username" />
-          <input type="password" name="password" id="password" placeholder="كلمة المرور" required aria-required="true" autocomplete="current-password" />
-          <div class="gendiv" role="radiogroup" aria-labelledby="gender_label">
-            <span id="gender_label" class="sr-only">الجنس</span>
-            <label for="male" class="male">
-              <input type="radio" name="gender" id="male" value="male" required aria-required="true" /> ذكر
-            </label>
-            <label for="female" class="female">
-              <input type="radio" name="gender" id="female" value="female" required aria-required="true" /> أنثى
-            </label>
-          </div>
-          <button class="btn" type="submit">دخول</button>
-          <button class="btn" type="button" id="cancel_login" style="background:#888; margin-left:10px;">إلغاء</button>
-        </form>
-        <div class="error" role="alert" aria-live="assertive" id="login_error">يرجى تعبئة جميع الحقول بشكل صحيح.</div>
+      <!-- نموذج تسجيل دخول الأعضاء -->
+      <section id="member_login_ui" class="login" style="display: block;">
+        <input type="text" id="member_user" placeholder="اسم المستخدم" autocomplete="username" />
+        <input type="password" id="member_pass" placeholder="كلمة المرور" autocomplete="current-password" />
+        <button id="member_submit" class="btn" style="width: 100%; margin: 10px 0 0 0;">دخول</button>
       </section>
 
-      <!-- نافذة الشات -->
-      <section id="chat_app" aria-live="polite" aria-label="تطبيق الشات">
-        <div class="chat-layout">
-          <!-- الشريط الجانبي -->
-          <aside class="sidebar" role="complementary" aria-label="قائمة المستخدمين">
-            <header class="sidebar-header">
-              <span>المستخدمون</span>
-              <button class="settings-btn" aria-label="الإعدادات"><i class="fa fa-cog"></i></button>
-            </header>
-
-            <nav class="room-tabs" role="tablist" aria-label="تبويبات غرف الدردشة">
-              <button class="room-tab active" role="tab" aria-selected="true" aria-controls="room1" id="tab_room1">الغرفة العامة</button>
-              <button class="room-tab" role="tab" aria-selected="false" aria-controls="room2" id="tab_room2">الغرفة الخاصة</button>
-            </nav>
-
-            <ul class="users-list" role="list" aria-label="قائمة المستخدمين النشطين">
-              <!-- أمثلة على المستخدمين -->
-              <li class="user-item" role="listitem" tabindex="0" aria-label="مستخدم: أحمد">
-                <div class="user-avatar" aria-hidden="true">أ</div>
-                <span>أحمد</span>
-              </li>
-              <li class="user-item admin" role="listitem" tabindex="0" aria-label="مستخدم: فاطمة، أدمن">
-                <div class="user-avatar" aria-hidden="true">ف</div>
-                <span>فاطمة</span>
-                <span class="admin-tag" aria-label="أدمن">أدمن</span>
-              </li>
-            </ul>
-          </aside>
-
-          <!-- منطقة المحادثة -->
-          <section class="chat-area" role="main" aria-live="polite" aria-atomic="false">
-            <header class="chat-header" role="banner">
-              <h4>الغرفة العامة</h4>
-              <button class="logout-btn" aria-label="تسجيل الخروج">تسجيل الخروج</button>
-            </header>
-
-            <div class="messages" role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false">
-              <!-- مثال رسالة -->
-              <article class="msg other" tabindex="0" aria-label="رسالة من أحمد: مرحباً بالجميع!">
-                <p>مرحباً بالجميع!</p>
-              </article>
-              <article class="msg me" tabindex="0" aria-label="رسالة منك: أهلاً أحمد!">
-                <p>أهلاً أحمد!</p>
-              </article>
-            </div>
-
-            <!-- منطقة إدخال الرسائل (يمكن إضافتها لاحقًا) -->
-          </section>
+      <!-- نموذج دخول الزوار -->
+      <section id="guest_login_ui" class="login">
+        <input type="text" id="guest_name" placeholder="اكتب اسمك المستعار هنا" autocomplete="off" />
+        
+        <!-- اختيار الجنس للزائر -->
+        <div class="gendiv">
+          <label class="male">
+            <input type="radio" name="guest_gender" value="male" checked /> ذكر <i class="fa-solid fa-mars"></i>
+          </label>
+          <label class="female">
+            <input type="radio" name="guest_gender" value="female" /> أنثى <i class="fa-solid fa-venus"></i>
+          </label>
         </div>
+        
+        <button id="guest_submit" class="btn" style="background-color: var(--green); width: 100%; margin: 10px 0 0 0;">دخول الآن</button>
       </section>
-    </div>
-  </main>
 
-  <script>
-    // جافاسكريبت لتحكم ظهور وإخفاء النماذج
-    const loginBtn = document.getElementById('login_btn');
-    const guestBtn = document.getElementById('guest_btn');
-    const loginForm = document.getElementById('login_form');
-    const chatApp = document.getElementById('chat_app');
-    const cancelLogin = document.getElementById('cancel_login');
-
-    loginBtn.addEventListener('click', () => {
-      loginForm.style.display = 'block';
-      loginForm.focus();
-    });
-
-    cancelLogin.addEventListener('click', () => {
-      loginForm.style.display = 'none';
-    });
-
-    guestBtn.addEventListener('click', () =>

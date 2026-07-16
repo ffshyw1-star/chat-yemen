@@ -4,9 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>شات اليمن | شات اليمن العربي</title>
-<link href="https://googleapis.com" rel="stylesheet">
+
+<!-- روابط الخطوط والأيقونات المباشرة والشغالة -->
+<link rel="preconnect" href="https://googleapis.com">
+<link rel="preconnect" href="https://gstatic.com" crossorigin>
+<link href="https://googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cloudflare.com">
+
+<!-- مكتبة السوكيت الخاصة بسيرفر Node.js -->
 <script src="/socket.io/socket.io.js"></script>
+
 <style>
 :root {
   --main-blue: #002e3c;
@@ -24,9 +31,10 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
   display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
 }
 .login-box { background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; width: 100%; max-width: 365px; text-align: center; }
-.login-box input, .login-box select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; font-size: 15px; text-align: center; }
+.login-box input, .login-box select { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: none; font-size: 15px; text-align: center; outline: none; }
 .login-box select { text-align-last: center; cursor: pointer; background: white; color: #333; font-weight: bold; }
-.login-btn-submit { background: #74b20e; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; border: none; }
+.login-btn-submit { background: #74b20e; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; border: none; padding: 12px; border-radius: 8px; font-size: 16px;}
+.login-btn-submit:hover { background: #5f930b; }
 
 .top-header-bar {
   background: var(--main-blue); color: white; padding: 0 15px;
@@ -54,20 +62,15 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 .user-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
 .user-msg-text { font-size: 14.5px; line-height: 1.5; color: #222; word-break: break-word; }
 
-.tag-role { font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
-.r-visitor { color: #ff3b30; }
-.r-member { color: #51c4d3; }
-.r-vip { color: #ff007f; }
-.r-mod { color: #4cd964; }
-.r-admin { color: #ff9500; }
-.r-owner { color: #9b59b6; }
+.tag-role { font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px; margin-right: 4px; color: white !important; }
+.r-visitor { background-color: #ff3b30; }
+.r-member { background-color: #51c4d3; }
+.r-vip { background-color: #ff007f; }
+.r-mod { background-color: #4cd964; }
+.r-admin { background-color: #ff9500; }
+.r-owner { background-color: #9b59b6; }
 
 .user-avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #e0e0e0; }
-.chat-uploaded-img { max-width: 220px; max-height: 220px; border-radius: 10px; margin-top: 5px; border: 1px solid #e0e0e0; }
-.voice-message { display: flex; align-items: center; gap: 8px; background: #f1f3f4; padding: 8px 12px; border-radius: 15px; margin-top: 5px; direction: ltr; }
-.voice-message i { color: var(--main-blue); font-size: 16px; cursor: pointer; }
-.voice-bar { width: 120px; height: 4px; background: #ccc; border-radius: 2px; }
-.voice-progress { width: 40%; height: 100%; background: var(--main-blue); border-radius: 2px; }
 
 .input-area-bar { background: #ffffff; padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border-color); }
 .plus-icon-btn { color: #7f8c8d; font-size: 20px; cursor: pointer; background: none; border: none; padding: 5px; }
@@ -88,12 +91,11 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 .side-drawer.open { right: 0; }
 .drawer-header { background: var(--main-blue); color: white; padding: 15px; font-weight: bold; font-size: 15px; }
 .drawer-list-item { padding: 12px 15px; border-bottom: 1px solid #f5f5f5; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.color-swatch { width: 30px; height: 30px; border-radius: 50%; display: inline-block; margin: 5px; cursor: pointer; border: 2px solid #ddd; }
 
-/* نافذة أزرار الإدارة الجديدة المنبثقة */
+/* قائمة أزرار التحكم الإداري المنبثقة المصممة */
 .admin-action-menu {
   position: absolute; background: white; border: 1px solid #ddd; border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1200; display: flex; flex-direction: column; width: 110px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1200; display: flex; flex-direction: column; width: 120px;
 }
 .admin-action-menu button {
   padding: 8px 12px; text-align: right; background: none; border: none; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%;
@@ -107,41 +109,56 @@ body { background: #ffffff; height: 100vh; display: flex; flex-direction: column
 </head>
 <body>
 
-  <!-- شاشة تسجيل الدخول -->
+  <!-- شاشة الدخول المصلحة والمكتملة الأوسمة -->
   <div id="login_page">
     <div class="login-box">
       <h3 style="margin-bottom:15px;">شات اليمن العربي</h3>
-      <input type="text" id="login_username" placeholder="ادخل اسمك هنا..." required>
-      <select id="login_role">
-        <option value="visitor">رتبة: زائر</option>
-        <option value="member">رتبة: عضو عادي</option>
-        <option value="vip">رتبة: مميز ✨</option>
-        <option value="mod">رتبة: مشرف 🛡️</option>
-        <option value="admin">رتبة: أدمن 🛠️</option>
-        <option value="owner">رتبة: المالك 🌟</option>
+      <input type="text" id="username_input" placeholder="أدخل اسم المستخدم المختار">
+      <select id="role_select">
+        <option value="visitor">زائر</option>
+        <option value="member">عضو</option>
+        <option value="mod">مشرف</option>
+        <option value="admin">أدمن</option>
+        <option value="owner">صاحب الموقع</option>
       </select>
-      <button class="login-btn-submit" onclick="handleChatLogin()">دخول الدردشة</button>
+      <button class="login-btn-submit" id="btn_submit_login">دخول الشات</button>
     </div>
   </div>
 
-  <!-- لوحة خيارات الإدارة المخفية الديناميكية -->
-  <div class="admin-action-menu hide" id="admin_floating_menu">
-    <button onclick="sendAdminAction('mute')"><i class="fa fa-volume-mute"></i> كتم العضو</button>
-    <button onclick="sendAdminAction('kick')" class="btn-danger-action"><i class="fa fa-sign-out-alt"></i> طرد مؤقت</button>
-    <button onclick="sendAdminAction('ban')" class="btn-danger-action"><i class="fa fa-gavel"></i> حظر نهائي</button>
-  </div>
-
-  <!-- الهيدر العلوي -->
+  <!-- الهيدر العلوي والأزرار الشغالة -->
   <div class="top-header-bar">
-    <div class="top-header-right"><i class="fa fa-bars" id="menu_drawer_btn"></i></div>
-    <div class="top-header-center"><div class="store-pill-btn"><span>Store.</span></div></div>
+    <div class="top-header-right">
+      <i class="fa-solid fa-bars" id="open_drawer_btn"></i>
+    </div>
+    <div class="top-header-center">
+      <div class="store-pill-btn">
+        <span>متجر الشات</span>
+        <span style="font-size: 9px; color: #00cc99;">تطوير الحساب</span>
+      </div>
+    </div>
     <div class="top-header-left">
-      <i class="fa-regular fa-envelope"></i><i class="fa fa-user-plus"></i><i class="fa-regular fa-heart"></i>
-      <input type="file" id="profile_pic_uploader" accept="image/*" class="hide">
-      <div class="avatar-wrapper-top" id="top_profile_avatar_click">
-        <img src="" id="top_header_avatar_img" alt="بروفايل">
+      <i class="fa-solid fa-bell" id="bell_btn"></i>
+      <div class="avatar-wrapper-top" id="top_avatar">
+        <img src="https://placeholder.com" alt="avatar" id="my_top_avatar_img">
         <div class="online-dot"></div>
       </div>
     </div>
   </div>
 
+  <!-- حاويات الشات والتنقل السفلي مدمجة -->
+  <div class="chat-main-view">
+    <div class="messages-box" id="messages_container"></div>
+
+    <!-- قائمة المتواجدين النشطين -->
+    <div class="messages-box hide" id="users_container">
+      <h4 style="padding: 10px; color: var(--main-blue);">المتواجدون الآن:</h4>
+      <div id="active_users_list"></div>
+    </div>
+
+    <!-- قائمة الغرف -->
+    <div class="messages-box hide" id="rooms_container">
+      <h4 style="padding: 10px; color: var(--main-blue);">الغرف المتاحة:</h4>
+      <p style="padding: 10px; color: #666;"><i class="fa-solid fa-door-open"></i> الغرفة العامة للشات</p>
+    </div>
+
+    <div class="emoji-popup hide" id="emoji_box">

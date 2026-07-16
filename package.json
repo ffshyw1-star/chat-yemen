@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "author": "اسمك أو فريق التطوير",
+  "author": "المفلحي",
   "license": "MIT",
   "dependencies": {
     "express": "^4.19.2",

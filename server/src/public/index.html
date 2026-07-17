@@ -36,15 +36,18 @@
             margin-bottom: 15px;
         }
 
-        <h1> {
+        h1 {
             font-size: 24px;
         }
 
         p {
             color: #777;
+            margin-bottom: 20px;
         }
 
-        button {
+        /* تحويل الأزرار إلى روابط منسقة لضمان العمل على الجوال */
+        .btn-link {
+            display: block;
             width: 100%;
             padding: 14px;
             margin-top: 12px;
@@ -52,6 +55,8 @@
             border-radius: 25px;
             font-size: 17px;
             cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
         }
 
         .guest {
@@ -66,6 +71,7 @@
 
         .register {
             background: #eee;
+            color: #333;
         }
     </style>
 </head>
@@ -77,18 +83,10 @@
         <h1>شات اليمن المطور</h1>
         <p>دردشة عربية سريعة وسهلة</p>
 
-        <!-- تم تعديل الروابط هنا لتوجيه المتصفح للمسار الصحيح مباشرة -->
-        <button class="guest" onclick="location.href='./guest.html'">
-            دخول الزوار
-        </button>
-
-        <button class="login" onclick="location.href='./login.html'">
-            دخول الأعضاء
-        </button>
-
-        <button class="register" onclick="location.href='./register.html'">
-            تسجيل حساب
-        </button>
+        <!-- تم الاعتماد على روابط تصفح حقيقية هنا لمنع أي حظر من المتصفحات -->
+        <a href="/guest.html" class="btn-link guest">دخول الزوار</a>
+        <a href="/login.html" class="btn-link login">دخول الأعضاء</a>
+        <a href="/register.html" class="btn-link register">تسجيل حساب</a>
     </div>
 
 </body>

@@ -8,7 +8,7 @@ const app = require("./app");
 require("./database/tables");
 
 
-// تحميل نظام الرتب
+// تحميل نظام الرتب (إذا كان الملف موجود)
 
 require("./database/ranks");
 
@@ -22,16 +22,15 @@ const server = http.createServer(app);
 
 
 
-const io = new Server(server,{
+const io = new Server(server, {
 
-cors:{
+    cors: {
 
-origin:"*"
+        origin: "*"
 
-}
+    }
 
 });
-
 
 
 
@@ -47,19 +46,22 @@ require("./socket/chatSocket")(io);
 
 
 
+
 // الرسائل الخاصة
 
 require("./socket/privateSocket")(io);
 
 
 
-// المتواجدين
+
+// قائمة المتواجدين
 
 require("./socket/onlineSocket")(io);
 
 
 
-// الإدارة
+
+// نظام الإدارة
 
 const adminSocket =
 require("./socket/adminSocket")(io);
@@ -67,14 +69,14 @@ require("./socket/adminSocket")(io);
 
 
 app.set(
-"adminSocket",
-adminSocket
+    "adminSocket",
+    adminSocket
 );
 
 
 
 
-// الإشعارات
+// نظام الإشعارات
 
 const notificationSocket =
 require("./socket/notificationSocket")(io);
@@ -82,13 +84,17 @@ require("./socket/notificationSocket")(io);
 
 
 app.set(
-"notificationSocket",
-notificationSocket
+    "notificationSocket",
+    notificationSocket
 );
 
 
 
 
+
+// =====================
+// تشغيل السيرفر
+// =====================
 
 
 const PORT =

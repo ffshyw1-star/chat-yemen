@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../database/database");
+const auth = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ const router = express.Router();
 // عرض جميع الغرف
 // =============================
 
-router.get("/", (req,res)=>{
+router.get("/", auth, (req,res)=>{
 
 
 db.all(
@@ -32,7 +33,9 @@ ORDER BY id ASC
 if(err){
 
 return res.status(500).json({
+
 error:"Database Error"
+
 });
 
 }
@@ -55,7 +58,7 @@ res.json(rooms);
 // جلب غرفة معينة
 // =============================
 
-router.get("/:id",(req,res)=>{
+router.get("/:id", auth, (req,res)=>{
 
 
 const id =
@@ -82,7 +85,9 @@ WHERE id=?
 if(err){
 
 return res.status(500).json({
+
 error:"Database Error"
+
 });
 
 }
@@ -92,7 +97,9 @@ error:"Database Error"
 if(!room){
 
 return res.status(404).json({
+
 error:"Room Not Found"
+
 });
 
 }

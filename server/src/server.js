@@ -1,5 +1,7 @@
 const http = require("http");
 const app = require("./app");
+require("./database/tables");
+require("./database/defaultData");
 const { Server } = require("socket.io");
 
 const server = http.createServer(app);

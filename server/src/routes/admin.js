@@ -1,8 +1,10 @@
 const express = require("express");
 
-const auth = require("../middleware/auth");
+const auth =
+require("../middleware/auth");
 
-const db = require("../database/database");
+const db =
+require("../database/database");
 
 
 const router = express.Router();
@@ -10,12 +12,20 @@ const router = express.Router();
 
 
 
-// فحص الصلاحية
 
-function checkPermission(user,permission){
+function checkPermission(user){
 
 
 if(user.rank==="owner")
+return true;
+
+
+if(
+user.rank==="admin" ||
+user.rank==="superadmin" ||
+user.rank==="moderator"
+)
+
 return true;
 
 
@@ -29,39 +39,61 @@ return false;
 
 
 
-// 🔇 كتم مستخدم
+
+
+// 🔇 كتم
 
 
 router.post("/mute",auth,(req,res)=>{
+
+
+if(!checkPermission(req.user)){
+
+return res.status(403).json({
+
+error:"ليس لديك صلاحية"
+
+});
+
+}
+
 
 
 const {
 
 userId,
 
-minutes
+minutes,
+
+room
 
 }=req.body;
 
 
 
-if(!checkPermission(req.user,"mute")){
+const adminSocket =
+req.app.get(
+"adminSocket"
+);
 
-return res.status(403).json({
 
-error:"ليس لديك صلاحية"
 
-});
+if(adminSocket){
+
+adminSocket.mute(
+room,
+userId,
+minutes
+);
 
 }
-
 
 
 
 res.json({
 
 message:
-`تم كتم المستخدم لمدة ${minutes} دقيقة`
+`تم كتم المستخدم لمدة ${minutes} دقائق`
 
 });
 
@@ -75,13 +107,13 @@ message:
 
 
 
-// 🚪 طرد مستخدم
+// 🚪 طرد
 
 
 router.post("/kick",auth,(req,res)=>{
 
 
-if(!checkPermission(req.user,"kick")){
+if(!checkPermission(req.user)){
 
 return res.status(403).json({
 
@@ -90,6 +122,24 @@ error:"ليس لديك صلاحية"
 });
 
 }
+
+
+
+const adminSocket =
+req.app.get(
+"adminSocket"
+);
+
+
+
+adminSocket.kick(
+
+req.body.room,
+
+req.body.userId
+
+);
+
 
 
 
@@ -108,14 +158,14 @@ message:"تم طرد المستخدم"
 
 
 
+
 // 🗑 حذف رسالة
 
 
 router.post("/delete-message",auth,(req,res)=>{
 
 
-if(!checkPermission(req.user,"delete")){
-
+if(!checkPermission(req.user)){
 
 return res.status(403).json({
 
@@ -123,19 +173,33 @@ error:"ليس لديك صلاحية"
 
 });
 
-
 }
+
+
+
+const adminSocket =
+req.app.get(
+"adminSocket"
+);
+
+
+
+adminSocket.deleteMessage(
+req.body.room
+);
 
 
 
 res.json({
 
-message:"تم حذف الرسالة"
+message:"تم حذف رسالة مخالفة"
 
 });
 
 
 });
+
+
 
 
 
@@ -150,8 +214,7 @@ message:"تم حذف الرسالة"
 router.post("/rename",auth,(req,res)=>{
 
 
-if(!checkPermission(req.user,"rename")){
-
+if(!checkPermission(req.user)){
 
 return res.status(403).json({
 
@@ -159,19 +222,38 @@ error:"ليس لديك صلاحية"
 
 });
 
-
 }
+
+
+
+const adminSocket =
+req.app.get(
+"adminSocket"
+);
+
+
+
+adminSocket.rename(
+
+req.body.room,
+
+req.body.oldName,
+
+req.body.newName
+
+);
 
 
 
 res.json({
 
-message:"تم تعديل الاسم"
+message:"تم تغيير الاسم"
 
 });
 
 
 });
+
 
 
 
@@ -187,15 +269,13 @@ message:"تم تعديل الاسم"
 router.post("/ban",auth,(req,res)=>{
 
 
-if(!checkPermission(req.user,"ban")){
-
+if(!checkPermission(req.user)){
 
 return res.status(403).json({
 
 error:"ليس لديك صلاحية"
 
 });
-
 
 }
 
@@ -243,7 +323,7 @@ history:[]
 
 
 
-// 🗑 حذف عضوية (المالك)
+// 🗑 حذف عضوية (المالك فقط)
 
 
 router.delete("/delete-user/:id",auth,(req,res)=>{
@@ -251,13 +331,11 @@ router.delete("/delete-user/:id",auth,(req,res)=>{
 
 if(req.user.rank!=="owner"){
 
-
 return res.status(403).json({
 
 error:"للمالك فقط"
 
 });
-
 
 }
 
@@ -266,15 +344,13 @@ error:"للمالك فقط"
 db.run(
 
 `
-
 DELETE FROM users
-
 WHERE id=?
-
 `,
 
-[req.params.id]
-
+[
+req.params.id
+]
 
 );
 
@@ -297,7 +373,7 @@ message:"تم حذف العضوية"
 
 
 
-// ⬆️⬇️ تغيير الرتبة (المالك)
+// تغيير الرتبة (المالك)
 
 
 router.post("/rank",auth,(req,res)=>{
@@ -305,43 +381,30 @@ router.post("/rank",auth,(req,res)=>{
 
 if(req.user.rank!=="owner"){
 
-
 return res.status(403).json({
 
 error:"للمالك فقط"
 
 });
 
-
 }
-
-
-
-const {
-
-userId,
-
-rank
-
-}=req.body;
 
 
 
 db.run(
 
 `
-
 UPDATE users
-
 SET rank=?
-
 WHERE id=?
-
 `,
 
 [
-rank,
-userId
+
+req.body.rank,
+
+req.body.userId
+
 ]
 
 );
@@ -356,6 +419,7 @@ message:"تم تحديث الرتبة"
 
 
 });
+
 
 
 

@@ -3,7 +3,7 @@ require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
 
-const app = require("./app");
+const app = require('./app.Js')
 
 // إنشاء الجداول عند تشغيل السيرفر
 require("./database/tables");

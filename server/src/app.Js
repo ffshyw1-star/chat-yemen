@@ -17,6 +17,17 @@ app.use(
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'"], // هذا السطر يسمح بتشغيل الأزرار
+                styleSrc: ["'self'", "'unsafe-inline'"],
+            },
+        },
+    })
+);
+
+   helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
                 scriptSrc: ["'self'", "'unsafe-inline'"], // هذا التعديل يسمح للأزرار بالاستجابة للضغط واللمس
                 styleSrc: ["'self'", "'unsafe-inline'"],
                 imgSrc: ["'self'", "data:", "blob:"]

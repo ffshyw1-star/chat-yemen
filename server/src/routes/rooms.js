@@ -1,122 +1,368 @@
-const express = require("express");
-const db = require("../database/database");
-const auth = require("../middleware/auth");
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
 
-const router = express.Router();
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>
+الغرف - شات اليمن المطور
+</title>
 
 
-// =============================
-// عرض جميع الغرف
-// =============================
+<style>
 
-router.get("/", auth, (req,res)=>{
+*{
+box-sizing:border-box;
+}
 
 
-db.all(
+body{
+
+margin:0;
+
+font-family:tahoma,Arial;
+
+background:#f3f3f3;
+
+}
+
+
+
+.header{
+
+background:#222;
+
+color:white;
+
+padding:15px;
+
+text-align:center;
+
+font-size:20px;
+
+}
+
+
+
+.rooms{
+
+padding:15px;
+
+}
+
+
+
+
+.room{
+
+background:white;
+
+border-radius:15px;
+
+padding:20px;
+
+margin-bottom:15px;
+
+text-align:center;
+
+box-shadow:0 2px 8px #ccc;
+
+}
+
+
+
+.room-icon{
+
+font-size:45px;
+
+}
+
+
+
+.room-name{
+
+font-size:20px;
+
+font-weight:bold;
+
+margin:10px;
+
+}
+
+
+
+.online{
+
+color:#777;
+
+margin-bottom:10px;
+
+}
+
+
+
+button{
+
+background:#2196f3;
+
+color:white;
+
+border:0;
+
+padding:12px 25px;
+
+border-radius:20px;
+
+cursor:pointer;
+
+font-size:15px;
+
+}
+
+
+
+.error{
+
+text-align:center;
+
+color:red;
+
+padding:20px;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+
+<div class="header">
+
+🌎 شات اليمن المطور
+
+</div>
+
+
+
+<div class="rooms" id="rooms">
+
+
+</div>
+
+
+
+
+
+<script>
+
+
+// التحقق من الدخول
+
+
+const token =
+localStorage.getItem("token");
+
+
+
+if(!token){
+
+
+location.href="index.html";
+
+
+}
+
+
+
+
+
+async function loadRooms(){
+
+
+try{
+
+
+let response =
+await fetch("/api/rooms",{
+
+method:"GET",
+
+headers:{
+
+
+"Authorization":
+
+"Bearer " + token
+
+
+}
+
+
+});
+
+
+
+
+
+if(response.status===401){
+
+
+localStorage.clear();
+
+location.href="index.html";
+
+return;
+
+
+}
+
+
+
+
+let rooms =
+await response.json();
+
+
+
+let box =
+document.getElementById(
+"rooms"
+);
+
+
+
+box.innerHTML="";
+
+
+
+
+
+rooms.forEach(room=>{
+
+
+box.innerHTML +=
 
 `
-SELECT 
-id,
-name,
-icon
 
-FROM rooms
-
-ORDER BY id ASC
-`,
-
-[],
-
-(err,rooms)=>{
+<div class="room">
 
 
-if(err){
+<div class="room-icon">
 
-return res.status(500).json({
+${room.icon}
 
-error:"Database Error"
+</div>
+
+
+
+<div class="room-name">
+
+${room.name}
+
+</div>
+
+
+
+<div class="online">
+
+المتواجدين الآن: 0
+
+</div>
+
+
+
+<button onclick="joinRoom('${room.id}','${room.name}')">
+
+اضغط هنا للدخول
+
+</button>
+
+
+</div>
+
+
+`;
+
+
 
 });
+
+
 
 }
 
+catch(error){
 
 
-res.json(rooms);
-
-
-
-});
-
-
-});
-
-
-
-
-// =============================
-// جلب غرفة معينة
-// =============================
-
-router.get("/:id", auth, (req,res)=>{
-
-
-const id =
-req.params.id;
-
-
-
-db.get(
+document.getElementById(
+"rooms"
+).innerHTML=
 
 `
-SELECT *
 
-FROM rooms
+<div class="error">
 
-WHERE id=?
+حدث خطأ في تحميل الغرف
 
-`,
+</div>
 
-[id],
-
-(err,room)=>{
+`;
 
 
-if(err){
+console.log(error);
 
-return res.status(500).json({
-
-error:"Database Error"
-
-});
 
 }
 
 
 
-if(!room){
+}
 
-return res.status(404).json({
 
-error:"Room Not Found"
 
-});
+
+
+function joinRoom(id,name){
+
+
+localStorage.setItem(
+"room_id",
+id
+);
+
+
+
+localStorage.setItem(
+"room_name",
+name
+);
+
+
+
+location.href=
+"chat.html?room="+id;
+
+
 
 }
 
 
 
-res.json(room);
+
+loadRooms();
 
 
-
-});
-
-
-});
+</script>
 
 
+</body>
 
-
-
-module.exports = router;
+</html>

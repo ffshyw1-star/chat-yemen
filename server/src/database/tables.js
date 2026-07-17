@@ -359,7 +359,40 @@ settings TEXT
 `);
 
 
+// إضافة الغرف الأساسية
 
+db.get(
+"SELECT COUNT(*) as count FROM rooms",
+[],
+(err,row)=>{
+
+if(row.count === 0){
+
+
+db.run(`
+INSERT INTO rooms
+(name,icon)
+
+VALUES
+
+('🌎 الغرفة العامة','🌎'),
+
+('🇾🇪 غرفة اليمن','🇾🇪'),
+
+('🇩🇿 غرفة الجزائر','🇩🇿'),
+
+('🇪🇬 غرفة مصر','🇪🇬')
+
+`);
+
+
+console.log("✅ Default Rooms Added");
+
+
+}
+
+
+});
 
 console.log("✅ All Database Tables Created");
 

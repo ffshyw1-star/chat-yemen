@@ -10,7 +10,67 @@
 
 <script src="/socket.io/socket.io.js"></script>
 
-<style>
+<style>.users-panel{
+
+position:fixed;
+right:-320px;
+top:0;
+width:300px;
+height:100%;
+background:white;
+z-index:10;
+box-shadow:0 0 10px #999;
+transition:.3s;
+overflow:auto;
+
+}
+
+
+.users-panel.open{
+
+right:0;
+
+}
+
+
+
+.users-header{
+
+background:#222;
+color:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+
+}
+
+
+
+.user-item{
+
+display:flex;
+align-items:center;
+gap:10px;
+padding:12px;
+border-bottom:1px solid #ddd;
+cursor:pointer;
+
+}
+
+
+
+.user-avatar{
+
+width:45px;
+height:45px;
+border-radius:50%;
+background:#ddd;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+}
 
 *{
 box-sizing:border-box;

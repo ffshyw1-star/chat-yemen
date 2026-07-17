@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>دخول الزوار</title>
+
+<style>
+
+body{
+font-family:tahoma;
+background:#eee;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.box{
+background:white;
+width:320px;
+padding:25px;
+border-radius:15px;
+text-align:center;
+}
+
+input,select,button{
+
+width:100%;
+padding:12px;
+margin:8px 0;
+border-radius:8px;
+border:1px solid #ddd;
+
+}
+
+button{
+
+background:#2196f3;
+color:white;
+border:none;
+cursor:pointer;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+<h2>
+دخول الزوار
+</h2>
+
+
+<input 
+id="username"
+placeholder="اكتب اسمك هنا">
+
+
+<select id="gender">
+
+<option value="ذكر">
+ذكر
+</option>
+
+<option value="أنثى">
+أنثى
+</option>
+
+<option value="آخر">
+آخر
+</option>
+
+</select>
+
+
+<button onclick="loginGuest()">
+دخول
+</button>
+
+
+</div>
+
+
+
+<script>
+
+
+async function loginGuest(){
+
+
+let username =
+document.getElementById("username").value;
+
+
+let gender =
+document.getElementById("gender").value;
+
+
+
+if(!username){
+
+alert("اكتب الاسم");
+
+return;
+
+}
+
+
+
+let res =
+await fetch("/api/auth/guest",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username,
+gender
+
+})
+
+});
+
+
+
+let data =
+await res.json();
+
+
+
+if(data.token){
+
+
+localStorage.setItem(
+"token",
+data.token
+);
+
+
+localStorage.setItem(
+"username",
+username
+);
+
+
+
+location.href="rooms.html";
+
+
+}else{
+
+
+alert(data.error);
+
+}
+
+
+}
+
+
+</script>
+
+
+</body>
+</html>

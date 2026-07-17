@@ -1,39 +1,40 @@
-const sqlite3 = require("sqlite3").verbose();
+const Database = require("better-sqlite3");
 const path = require("path");
+const fs = require("fs");
 
+// إنشاء مجلد قاعدة البيانات إذا لم يكن موجوداً
+const databaseFolder = path.join(__dirname);
 
-// مكان حفظ قاعدة البيانات
-const dbPath = path.join(__dirname, "../../chat.db");
+if (!fs.existsSync(databaseFolder)) {
+    fs.mkdirSync(databaseFolder, { recursive: true });
+}
 
+// مسار قاعدة البيانات
+const databasePath = path.join(__dirname, "chat.db");
 
-// الاتصال بقاعدة البيانات
-const db = new sqlite3.Database(dbPath, (err) => {
+// الاتصال
+const db = new Database(databasePath);
 
-    if (err) {
+// تحسين الأداء
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
+db.pragma("synchronous = NORMAL");
+db.pragma("temp_store = MEMORY");
+db.pragma("cache_size = -64000");
 
-        console.error("❌ Database Error:", err.message);
+// اختبار الاتصال
+try {
 
-    } else {
+    db.prepare("SELECT 1").get();
 
-        console.log("✅ Database Connected");
+    console.log("✅ SQLite Connected");
 
-    }
+} catch (err) {
 
-});
+    console.error("❌ Database Error");
 
+    console.error(err);
 
-// تفعيل العلاقات بين الجداول
-db.run(`
-PRAGMA foreign_keys = ON;
-`);
-
-
-// اختبار القاعدة
-db.serialize(() => {
-
-    console.log("🗄️ Database Ready");
-
-});
-
+}
 
 module.exports = db;

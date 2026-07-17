@@ -1,113 +1,86 @@
+require("dotenv").config();
+
 const http = require("http");
+const { Server } = require("socket.io");
 
 const app = require("./app");
 
-
-// تحميل جداول قاعدة البيانات
-
+// إنشاء الجداول عند تشغيل السيرفر
 require("./database/tables");
-
-
-// تحميل نظام الرتب (إذا كان الملف موجود)
-
-require("./database/ranks");
-
-
-
-const { Server } = require("socket.io");
-
-
 
 const server = http.createServer(app);
 
-
-
 const io = new Server(server, {
-
     cors: {
-
-        origin: "*"
-
+        origin: process.env.SOCKET_CORS || "*",
+        methods: ["GET", "POST"]
     }
-
 });
 
+// جعل Socket.IO متاحاً داخل جميع Routes
+app.set("io", io);
 
-
-
-// =====================
+// =============================
 // Socket Systems
-// =====================
-
+// =============================
 
 // الدردشة العامة
-
 require("./socket/chatSocket")(io);
 
-
-
-
 // الرسائل الخاصة
-
 require("./socket/privateSocket")(io);
 
-
-
-
-// قائمة المتواجدين
-
+// المتصلون
 require("./socket/onlineSocket")(io);
 
-
-
-
-// نظام الإدارة
-
-const adminSocket =
-require("./socket/adminSocket")(io);
-
-
-
-app.set(
-    "adminSocket",
-    adminSocket
-);
-
-
-
-
-// نظام الإشعارات
-
+// الإشعارات
 const notificationSocket =
 require("./socket/notificationSocket")(io);
-
-
 
 app.set(
     "notificationSocket",
     notificationSocket
 );
 
+// الإدارة
+const adminSocket =
+require("./socket/adminSocket")(io);
 
+app.set(
+    "adminSocket",
+    adminSocket
+);
 
+// الغرف
+require("./socket/roomSocket")(io);
 
+// الأصدقاء
+require("./socket/friendSocket")(io);
 
-// =====================
-// تشغيل السيرفر
-// =====================
+// لوحة الإحصائيات
+require("./socket/dashboardSocket")(io);
 
+// =============================
 
 const PORT =
 process.env.PORT || 3000;
 
+server.listen(PORT, () => {
 
+    console.log("================================");
 
-server.listen(PORT,()=>{
+    console.log(
+        `${process.env.SITE_NAME} Started`
+    );
 
+    console.log(
+        `Running On Port ${PORT}`
+    );
 
-console.log(
-`Chat Yemen Server Running ${PORT}`
-);
+    console.log(
+        `Mode : ${process.env.NODE_ENV}`
+    );
 
+    console.log("================================");
 
 });

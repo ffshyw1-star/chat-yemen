@@ -1063,5 +1063,473 @@ document.getElementById(
 
 
 </script>
+<script>
+
+
+// =============================
+// أوامر الإدارة
+// =============================
+
+
+async function adminRequest(url,body={}){
+
+
+let token =
+localStorage.getItem("token");
+
+
+
+let response =
+await fetch(url,{
+
+method:"POST",
+
+headers:{
+
+"Content-Type":"application/json",
+
+"Authorization":
+"Bearer "+token
+
+},
+
+body:JSON.stringify(body)
+
+});
+
+
+
+return await response.json();
+
+
+}
+
+
+
+
+
+
+
+// 🔇 كتم
+
+
+async function muteUser(){
+
+
+let result =
+await adminRequest(
+"/api/admin/mute",
+{
+
+userId:selectedUser,
+
+minutes:5
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+// 🚪 طرد
+
+
+async function kickUser(){
+
+
+let result =
+await adminRequest(
+"/api/admin/kick",
+{
+
+userId:selectedUser
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+
+// 🗑 حذف رسالة
+
+
+async function deleteMessage(){
+
+
+let result =
+await adminRequest(
+"/api/admin/delete-message",
+{
+
+userId:selectedUser
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+// ✏️ تعديل الاسم
+
+
+async function renameUser(){
+
+
+let newName =
+prompt(
+"اكتب الاسم الجديد"
+);
+
+
+
+if(!newName)
+return;
+
+
+
+let result =
+await adminRequest(
+"/api/admin/rename",
+{
+
+userId:selectedUser,
+
+newName
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+
+// 🚫 حظر
+
+
+async function banUser(){
+
+
+let result =
+await adminRequest(
+"/api/admin/ban",
+{
+
+userId:selectedUser
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+// 📝 سجل العضو
+
+
+async function historyUser(){
+
+
+let token =
+localStorage.getItem("token");
+
+
+
+let response =
+await fetch(
+
+"/api/admin/history/"+selectedUser,
+
+{
+
+headers:{
+
+"Authorization":
+"Bearer "+token
+
+}
+
+}
+
+);
+
+
+
+let data =
+await response.json();
+
+
+
+alert(
+JSON.stringify(data)
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// 🗑 حذف عضوية (المالك)
+
+
+async function deleteUser(){
+
+
+if(
+!confirm(
+"هل تريد حذف العضوية؟"
+)
+)
+return;
+
+
+
+let token =
+localStorage.getItem("token");
+
+
+
+let response =
+await fetch(
+
+"/api/admin/delete-user/"+selectedUser,
+
+{
+
+method:"DELETE",
+
+headers:{
+
+"Authorization":
+"Bearer "+token
+
+}
+
+}
+
+);
+
+
+
+let data =
+await response.json();
+
+
+
+alert(
+data.message || data.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+
+// ⬆️⬇️ تغيير الرتبة
+
+
+async function changeRank(){
+
+
+let rank =
+prompt(
+
+"اكتب الرتبة الجديدة\nowner/admin/moderator/member"
+
+);
+
+
+
+if(!rank)
+return;
+
+
+
+
+let result =
+await adminRequest(
+"/api/admin/rank",
+{
+
+userId:selectedUser,
+
+rank
+
+}
+
+);
+
+
+
+alert(
+result.message || result.error
+);
+
+
+
+closeCommands();
+
+
+}
+
+
+
+
+
+
+
+
+
+// إغلاق نافذة الأوامر
+
+
+function closeCommands(){
+
+
+document.getElementById(
+"commandBox"
+)
+.style.display="none";
+
+
+}
+
+
+
+
+
+
+
+
+
+// إخفاء أوامر المالك لغير المالك
+
+
+if(rank!=="owner"){
+
+
+document.getElementById(
+"ownerCommands"
+)
+.style.display="none";
+
+
+}
+
+
+
+
+</script>
+
+
+</body>
+
+</html>
 </body>
 </html>

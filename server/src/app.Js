@@ -3,28 +3,14 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
-const helmet = require("helmet");
 const compression = require("compression");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
 
 // =======================
-// Security (تم التعديل هنا لفك قفل الأزرار وجعلها تعمل)
+// Security
 // =======================
-app.use(
-    helmet({
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'", "'unsafe-inline'"], // هذا التعديل يسمح للأزرار بالاستجابة للضغط واللمس
-                styleSrc: ["'self'", "'unsafe-inline'"],
-                imgSrc: ["'self'", "data:", "blob:"]
-            },
-        },
-    })
-);
-
 app.use(cors({
     origin: "*",
     credentials: true

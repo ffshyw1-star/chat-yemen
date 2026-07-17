@@ -5,6 +5,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+const roomsRoutes = require("./routes/rooms");
+
+app.use("/api/rooms", roomsRoutes);
 const authRoutes = require("./routes/auth");
 
 app.use("/api/auth", authRoutes);

@@ -64,10 +64,37 @@ app.use("/api/store", require("./routes/store"));
 app.use("/api/dashboard", require("./routes/dashboard"));
 
 // =======================
-// Home
+// Home & Pages Routing (تم التعديل والربط الجذري هنا)
 // =======================
+
+// 1. الصفحة الرئيسية
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
+});
+
+// 2. صفحة دخول الزوار
+app.get("/guest.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/guest.html"));
+});
+
+// 3. صفحة دخول الأعضاء
+app.get("/login.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/login.html"));
+});
+
+// 4. صفحة تسجيل الحساب
+app.get("/register.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/register.html"));
+});
+
+// 5. صفحة غرف الدردشة
+app.get("/rooms.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/rooms.html"));
+});
+
+// 6. صفحة المحادثة
+app.get("/chat.html", (req, res) => {
+    res.sendFile(path.join(__dirname, "public/chat.html"));
 });
 
 // =======================

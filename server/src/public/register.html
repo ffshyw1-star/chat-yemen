@@ -1,176 +1,186 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
-
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>إنشاء حساب جديد - شات اليمن المطور</title>
 
-<meta charset="UTF-8">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-<meta name="viewport"
-content="width=device-width,initial-scale=1">
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f2f2f2;
+            font-family: tahoma, Arial;
+        }
 
-<title>
-تسجيل حساب
-</title>
+        .box {
+            width: 90%;
+            max-width: 360px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 20px #ccc;
+        }
 
+        .logo {
+            font-size: 45px;
+            margin-bottom: 15px;
+        }
 
-<style>
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
 
-body{
+        p {
+            color: #777;
+            margin-bottom: 20px;
+        }
 
-font-family:tahoma;
-background:#eee;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
+        /* تنسيق خانات الإدخال بشكل دائري متناسق مع التصميم */
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            background: white;
+        }
 
-}
+        select.input-field {
+            text-align-last: center;
+            cursor: pointer;
+        }
 
+        /* زر إنشاء الحساب بنفس شكل وتنسيق التصميم الرمادي القديم */
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border: 0;
+            border-radius: 25px;
+            font-size: 17px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #eee;
+            color: #333;
+            text-align: center;
+            width: 100%;
+        }
 
-.box{
+        .error-msg {
+            color: red;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
 
-background:white;
-width:320px;
-padding:25px;
-border-radius:15px;
-text-align:center;
-
-}
-
-
-input,button{
-
-width:100%;
-padding:12px;
-margin:8px 0;
-
-}
-
-
-button{
-
-background:#673ab7;
-color:white;
-border:0;
-border-radius:8px;
-
-}
-
-</style>
-
-
+        .back-link {
+            display: block;
+            margin-top: 15px;
+            color: #2196f3;
+            text-decoration: none;
+            font-size: 15px;
+        }
+    </style>
 </head>
-
 
 <body>
 
+    <div class="box">
+        <div class="logo">📝</div>
+        <h1>إنشاء حساب</h1>
+        <p>دردشة عربية سريعة وسهلة</p>
+        
+        <div class="error-msg" id="errorBox"></div>
 
-<div class="box">
+        <!-- استمارة التسجيل المربوطة بالخلفية -->
+        <form id="registerForm">
+            <input type="text" id="username" class="input-field" placeholder="الاسم" required>
+            <input type="password" id="password" class="input-field" placeholder="الرمز السري" required>
+            <input type="email" id="email" class="input-field" placeholder="البريد الالكتروني (وهمي او حقيقي)">
+            <input type="number" id="age" class="input-field" placeholder="العمر" min="12" max="99" required>
+            
+            <select id="gender" class="input-field" required>
+                <option value="" disabled selected>نوع الجنس</option>
+                <option value="male">شاب 🧑</option>
+                <option value="female">فتاة 👧</option>
+            </select>
 
+            <button type="submit" class="btn-submit">انشاء حساب</button>
+        </form>
 
-<h2>
-إنشاء حساب
-</h2>
+        <a href="/" class="back-link">العودة للرئيسية</a>
+    </div>
 
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value || "w@w.com"; // بريد افتراضي وهمي إذا ترك فارغاً
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const errorBox = document.getElementById('errorBox');
 
-<input
-id="username"
-placeholder="اسم المستخدم">
+            errorBox.style.display = "none";
 
+            try {
+                // 1. طلب إنشاء الحساب من السيرفر
+                const registerResponse = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, email, age: parseInt(age), gender })
+                });
+                
+                const registerData = await registerResponse.json();
 
-<input
-id="password"
-type="password"
-placeholder="كلمة المرور">
+                if (registerResponse.ok && registerData.success) {
+                    // 2. إذا نجح التسجيل، يتم تسجيل الدخول فوراً وتلقائياً لإنشاء الجلسة
+                    const loginResponse = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const loginData = await loginResponse.json();
 
-
-<input
-id="email"
-placeholder="البريد الإلكتروني">
-
-
-<button onclick="register()">
-
-إنشاء حساب
-
-</button>
-
-
-</div>
-
-
-
-
-<script>
-
-
-async function register(){
-
-
-let username =
-document.getElementById("username").value;
-
-
-let password =
-document.getElementById("password").value;
-
-
-let email =
-document.getElementById("email").value;
-
-
-
-let res =
-await fetch("/api/auth/register",{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-username,
-password,
-email
-
-})
-
-});
-
-
-
-let data =
-await res.json();
-
-
-
-if(data.message){
-
-
-alert(data.message);
-
-
-location.href="login.html";
-
-
-}else{
-
-
-alert(data.error);
-
-
-}
-
-
-}
-
-
-
-</script>
-
+                    if (loginResponse.ok && loginData.success) {
+                        // 3. حفظ بيانات الجلسة المؤقتة في المتصفح
+                        localStorage.setItem('token', loginData.token);
+                        localStorage.setItem('userId', loginData.user.id);
+                        localStorage.setItem('username', loginData.user.username);
+                        
+                        // 4. التحويل المباشر والفوري إلى قائمة الغرف كالمطلوب تماماً
+                        window.location.href = '/rooms.html';
+                    } else {
+                        window.location.href = '/login.html';
+                    }
+                } else {
+                    errorBox.innerText = registerData.message || 'فشل إنشاء الحساب، الاسم قد يكون مستخدماً بالفعل.';
+                    errorBox.style.display = "block";
+                }
+            } catch (err) {
+                errorBox.innerText = 'حدث خطأ في الاتصال بالخادم، يرجى المحاولة لاحقاً.';
+                errorBox.style.display = "block";
+            }
+        });
+    </script>
 
 </body>
+
 </html>

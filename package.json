@@ -1,21 +1,22 @@
 {
   "name": "chat-yemen-server",
   "version": "1.0.0",
-  "description": "شات اليمن العربي كامل",
-  "main": "server.js",
+  "description": "Chat Yemen Pro Backend",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
-  "author": "المفلحي",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2",
-    "socket.io": "^4.7.5",
-    "multer": "^1.4.5-lts.1",
-    "cors": "^2.8.5"
+    "express": "^5.0.0",
+    "socket.io": "^4.8.0",
+    "sqlite3": "^5.1.7",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.0"
   }
 }

@@ -45,7 +45,6 @@ app.use(express.urlencoded({
 // =======================
 // Static Files
 // =======================
-// التعديل: قراءة مجلد public مباشرة لأنه يقع داخل مجلد src بجانب هذا الملف
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -68,7 +67,6 @@ app.use("/api/dashboard", require("./routes/dashboard"));
 // Home
 // =======================
 app.get("/", (req, res) => {
-    // التعديل: جلب ملف index.html من المسار الداخلي الصحيح مباشرة
     res.sendFile(path.join(__dirname, "public/index.html"));
 });
 

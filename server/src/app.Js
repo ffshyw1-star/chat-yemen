@@ -1,168 +1,145 @@
+require("dotenv").config();
+
 const express = require("express");
 const path = require("path");
-
+const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 
+// =======================
+// Security
+// =======================
 
-// Middleware
+app.use(helmet());
+
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
+
+app.use(compression());
+
+// =======================
+// Rate Limit
+// =======================
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: {
+        success: false,
+        message: "عدد الطلبات كبير، حاول لاحقاً."
+    }
+});
+
+app.use(limiter);
+
+// =======================
+// Body Parser
+// =======================
 
 app.use(express.json());
 
 app.use(express.urlencoded({
-    extended:true
+    extended: true
 }));
 
+// =======================
+// Static Files
+// =======================
 
+app.use(express.static(path.join(__dirname, "../public")));
 
-
-// الملفات العامة
-
-app.use(
-express.static(
-path.join(__dirname,"../public")
-)
+app.use("/uploads",
+    express.static(path.join(__dirname, "../uploads"))
 );
 
+// =======================
+// API Routes
+// =======================
 
-
-
-// =====================
-// Routes
-// =====================
-
-
-// المصادقة
-
-const authRoutes =
-require("./routes/authRoutes");
-
-
-app.use(
-"/api/auth",
-authRoutes
+app.use("/api/auth",
+    require("./routes/authRoutes")
 );
 
-
-
-
-
-// الغرف
-
-const roomsRoutes =
-require("./routes/rooms");
-
-
-app.use(
-"/api/rooms",
-roomsRoutes
+app.use("/api/rooms",
+    require("./routes/rooms")
 );
 
-
-
-
-
-// الإدارة
-
-const adminRoutes =
-require("./routes/admin");
-
-
-app.use(
-"/api/admin",
-adminRoutes
+app.use("/api/profile",
+    require("./routes/profile")
 );
 
-
-
-
-
-// الإشعارات
-
-const notificationRoutes =
-require("./routes/notifications");
-
-
-app.use(
-"/api/notifications",
-notificationRoutes
+app.use("/api/posts",
+    require("./routes/posts")
 );
 
-
-
-
-
-// نظام تفاعلات المنشورات
-
-const reactionRoutes =
-require("./routes/reactions");
-
-
-app.use(
-"/api/reactions",
-reactionRoutes
+app.use("/api/reactions",
+    require("./routes/reactions")
 );
 
-
-
-
-
-// نظام المنشورات
-
-const postsRoutes =
-require("./routes/posts");
-
-
-app.use(
-"/api/posts",
-postsRoutes
+app.use("/api/friends",
+    require("./routes/friends")
 );
 
+app.use("/api/notifications",
+    require("./routes/notifications")
+);
 
+app.use("/api/users",
+    require("./routes/users")
+);
 
+app.use("/api/admin",
+    require("./routes/admin")
+);
 
+app.use("/api/store",
+    require("./routes/store")
+);
 
+app.use("/api/dashboard",
+    require("./routes/dashboard")
+);
 
+app.use("/api/settings",
+    require("./routes/settings")
+);
 
-// اختبار السيرفر
+// =======================
+// Home
+// =======================
 
-app.get("/api/test",(req,res)=>{
+app.get("/", (req, res) => {
 
-
-res.json({
-
-status:"Chat Yemen API Running"
+    res.sendFile(
+        path.join(__dirname, "../public/index.html")
+    );
 
 });
 
+// =======================
+// Health Check
+// =======================
+
+app.get("/api/health", (req, res) => {
+
+    res.json({
+        success: true,
+        name: process.env.SITE_NAME,
+        status: "running",
+        time: new Date()
+    });
 
 });
 
+// =======================
+// 404
+// =======================
 
+app.use((req, res) => {
 
-
-
-
-// الصفحة الرئيسية
-
-app.get("/",(req,res)=>{
-
-
-res.sendFile(
-
-path.join(
-__dirname,
-"../public/index.html"
-)
-
-);
-
-
-});
-
-
-
-
-
-
-module.exports = app;
+    res.status(404).json

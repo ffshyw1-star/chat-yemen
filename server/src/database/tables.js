@@ -393,6 +393,31 @@ console.log("✅ Default Rooms Added");
 
 
 });
+// المستخدمون المتواجدون
+
+db.run(`
+
+CREATE TABLE IF NOT EXISTS online_users (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+user_id INTEGER,
+
+username TEXT,
+
+room_id INTEGER,
+
+rank TEXT DEFAULT 'guest',
+
+gender TEXT,
+
+avatar TEXT,
+
+joined_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+)
+
+`);
 
 console.log("✅ All Database Tables Created");
 

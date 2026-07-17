@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+
+<title>
+شات اليمن المطور
+</title>
+
+
+<script src="/socket.io/socket.io.js"></script>
+
+
+<style>
+
+body{
+
+margin:0;
+font-family:tahoma;
+
+}
+
+
+.header{
+
+background:#333;
+color:white;
+padding:15px;
+
+}
+
+
+
+#messages{
+
+height:70vh;
+overflow:auto;
+padding:10px;
+
+}
+
+
+
+.input{
+
+display:flex;
+padding:10px;
+}
+
+
+
+input{
+
+flex:1;
+padding:12px;
+
+}
+
+
+
+button{
+
+padding:10px;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+
+<div class="header">
+
+🌎 شات اليمن المطور
+
+</div>
+
+
+
+<div id="messages">
+
+
+</div>
+
+
+
+<div class="input">
+
+
+<input id="msg"
+placeholder="اكتب هنا...">
+
+
+<button onclick="send()">
+
+➤
+
+</button>
+
+
+</div>
+
+
+
+
+<script>
+
+
+const socket =
+io();
+
+
+
+let params =
+new URLSearchParams(
+location.search
+);
+
+
+let room =
+params.get("room");
+
+
+
+let username =
+localStorage.getItem("username")
+||
+"زائر";
+
+
+
+socket.emit(
+"join_room",
+room
+);
+
+
+
+socket.on(
+"system_message",
+msg=>{
+
+addMessage(
+"[ "+msg+" ]"
+);
+
+});
+
+
+
+socket.on(
+"receive_message",
+data=>{
+
+addMessage(
+data.username+
+": "+
+data.message
+);
+
+});
+
+
+
+
+function send(){
+
+
+let text =
+document.getElementById("msg").value;
+
+
+
+socket.emit(
+"send_message",
+{
+
+room,
+username,
+message:text
+
+}
+);
+
+
+
+document.getElementById("msg").value="";
+
+
+}
+
+
+
+function addMessage(text){
+
+
+let div =
+document.createElement("div");
+
+
+div.innerText=text;
+
+
+document
+.getElementById("messages")
+.appendChild(div);
+
+
+}
+
+
+
+</script>
+
+
+</body>
+
+</html>

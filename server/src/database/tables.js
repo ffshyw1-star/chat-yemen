@@ -149,6 +149,101 @@ FOREIGN KEY(sender_id) REFERENCES users(id),
 FOREIGN KEY(receiver_id) REFERENCES users(id)
 
 );
+-- =====================================================
+-- جدول المنشورات
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS posts (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+user_id INTEGER NOT NULL,
+
+username TEXT NOT NULL,
+
+content TEXT,
+
+image TEXT,
+
+likes INTEGER DEFAULT 0,
+
+comments INTEGER DEFAULT 0,
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+FOREIGN KEY(user_id) REFERENCES users(id)
+
+);
+
+-- =====================================================
+-- جدول التفاعلات
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS reactions (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+post_id INTEGER NOT NULL,
+
+user_id INTEGER NOT NULL,
+
+reaction TEXT NOT NULL,
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+UNIQUE(post_id,user_id),
+
+FOREIGN KEY(post_id) REFERENCES posts(id),
+
+FOREIGN KEY(user_id) REFERENCES users(id)
+
+);
+
+-- =====================================================
+-- جدول الإشعارات
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+user_id INTEGER NOT NULL,
+
+type TEXT,
+
+message TEXT,
+
+link TEXT,
+
+read INTEGER DEFAULT 0,
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+FOREIGN KEY(user_id) REFERENCES users(id)
+
+);
+
+-- =====================================================
+-- جدول الأصدقاء
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS friends (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+sender_id INTEGER NOT NULL,
+
+receiver_id INTEGER NOT NULL,
+
+status TEXT DEFAULT 'pending',
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+FOREIGN KEY(sender_id) REFERENCES users(id),
+
+FOREIGN KEY(receiver_id) REFERENCES users(id)
+
+);
 
 COMMIT;
 

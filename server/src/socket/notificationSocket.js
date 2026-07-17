@@ -1,10 +1,35 @@
-module.exports=function(io){
+module.exports = function(io){
+
+
+const users = {};
+
+
+
+io.on("connection",(socket)=>{
+
+
+socket.on("register_user",(userId)=>{
+
+
+socket.join(
+"user_"+userId
+);
+
+
+});
+
+
+
+});
+
+
+
 
 
 return {
 
 
-send(userId,message){
+send(userId,message,type="system"){
 
 
 io.to(
@@ -14,7 +39,9 @@ io.to(
 "notification",
 {
 
-message
+message,
+
+type
 
 }
 
@@ -26,6 +53,7 @@ message
 
 
 };
+
 
 
 };

@@ -1,22 +1,29 @@
 {
-  "name": "chat-yemen-server",
+  "name": "chat-yemen",
   "version": "1.0.0",
-  "description": "Chat Yemen Pro Backend",
+  "description": "Chat Yemen Professional",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
   "dependencies": {
-    "express": "^5.0.0",
-    "socket.io": "^4.8.0",
-    "sqlite3": "^5.1.7",
-    "cors": "^2.8.5",
     "bcrypt": "^5.1.1",
+    "better-sqlite3": "^12.2.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5"
+    "mime-types": "^3.0.1",
+    "moment": "^2.30.1",
+    "multer": "^2.0.2",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.10"
   }
 }

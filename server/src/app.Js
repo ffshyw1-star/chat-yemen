@@ -5,12 +5,9 @@ const path = require("path");
 const app = express();
 
 
-// قراءة JSON
+// Middleware
 
 app.use(express.json());
-
-
-// قراءة البيانات من النماذج
 
 app.use(express.urlencoded({
     extended:true
@@ -22,31 +19,69 @@ app.use(express.urlencoded({
 // الملفات العامة
 
 app.use(
-express.static(
-path.join(__dirname,"../public")
-)
+    express.static(
+        path.join(__dirname,"../public")
+    )
 );
 
 
 
 
+// =====================
 // Routes
+// =====================
+
+
+// نظام المصادقة
 
 const authRoutes = require("./routes/authRoutes");
 
 app.use(
-"/api/auth",
-authRoutes
+    "/api/auth",
+    authRoutes
 );
 
 
+
+
+// نظام الغرف
 
 const roomsRoutes = require("./routes/rooms");
 
 app.use(
-"/api/rooms",
-roomsRoutes
+    "/api/rooms",
+    roomsRoutes
 );
+
+
+
+
+// نظام الإدارة والصلاحيات
+
+const adminRoutes = require("./routes/admin");
+
+app.use(
+    "/api/admin",
+    adminRoutes
+);
+
+
+
+
+
+// اختبار السيرفر
+
+app.get("/api/test",(req,res)=>{
+
+
+res.json({
+
+status:"Chat Yemen API Running"
+
+});
+
+
+});
 
 
 
@@ -55,6 +90,7 @@ roomsRoutes
 // الصفحة الرئيسية
 
 app.get("/",(req,res)=>{
+
 
 res.sendFile(
 
@@ -65,21 +101,6 @@ __dirname,
 
 );
 
-});
-
-
-
-
-
-// اختبار السيرفر
-
-app.get("/api/test",(req,res)=>{
-
-res.json({
-
-status:"Chat Yemen API Running"
-
-});
 
 });
 

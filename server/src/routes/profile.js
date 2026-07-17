@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 // تأكد من مسار قاعدة البيانات الصحيح في مشروعك
-const db = require('../database'); 
+const db =
+require("../database/database");
 
 // 1. جلب بيانات الملف الشخصي للمستخدم الحالي
 router.get('/me', (req, res) => {

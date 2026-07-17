@@ -8,14 +8,13 @@ const app = require("./app");
 require("./database/tables");
 
 
-// تحميل نظام الرتب والصلاحيات
+// تحميل نظام الرتب
 
 require("./database/ranks");
 
 
 
 const { Server } = require("socket.io");
-
 
 
 const server = http.createServer(app);
@@ -25,9 +24,7 @@ const server = http.createServer(app);
 const io = new Server(server,{
 
 cors:{
-
 origin:"*"
-
 }
 
 });
@@ -35,7 +32,7 @@ origin:"*"
 
 
 
-// Socket العامة
+// Socket الدردشة العامة
 
 require("./socket/chatSocket")(io);
 
@@ -48,6 +45,22 @@ require("./socket/privateSocket")(io);
 // Socket المتواجدين
 
 require("./socket/onlineSocket")(io);
+
+
+
+// Socket الإدارة
+
+const adminSocket =
+require("./socket/adminSocket")(io);
+
+
+
+// حفظه للاستخدام في Routes
+
+app.set(
+"adminSocket",
+adminSocket
+);
 
 
 

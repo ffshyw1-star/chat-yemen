@@ -10,7 +10,6 @@
 
 <script src="/socket.io/socket.io.js"></script>
 
-
 <style>
 
 *{
@@ -21,8 +20,8 @@ box-sizing:border-box;
 body{
 
 margin:0;
-font-family:tahoma;
-background:#f5f5f5;
+font-family:Tajawal,Tahoma,Arial;
+background:#f3f3f3;
 height:100vh;
 display:flex;
 flex-direction:column;
@@ -30,22 +29,34 @@ flex-direction:column;
 }
 
 
+
 /* الشريط العلوي */
 
-.top{
+.top-bar{
 
-height:55px;
-background:#222;
+height:60px;
+background:#202020;
 color:white;
+
 display:flex;
 align-items:center;
 justify-content:space-between;
+
 padding:0 10px;
 
 }
 
 
-.icons{
+.site-name{
+
+font-size:18px;
+font-weight:bold;
+
+}
+
+
+
+.top-icons{
 
 display:flex;
 gap:12px;
@@ -53,49 +64,75 @@ gap:12px;
 }
 
 
+
 .icon{
 
-font-size:22px;
+font-size:23px;
 cursor:pointer;
 
 }
 
 
 
-/* اسم الغرفة */
 
-.room-title{
+
+/* عنوان الغرفة */
+
+
+.room-header{
 
 background:white;
-text-align:center;
+
 padding:10px;
+
+text-align:center;
+
 border-bottom:1px solid #ddd;
+
+font-weight:bold;
 
 }
 
 
 
-/* الرسائل */
+
+
+/* منطقة الرسائل */
+
 
 .messages{
 
 flex:1;
+
 overflow-y:auto;
+
 padding:10px;
 
 }
+
+
+
 
 
 .message{
 
-display:flex;
-gap:10px;
 background:white;
-padding:10px;
+
 border-radius:12px;
+
+padding:8px;
+
 margin-bottom:10px;
 
+display:flex;
+
+gap:10px;
+
+align-items:flex-start;
+
 }
+
+
 
 
 
@@ -103,20 +140,46 @@ margin-bottom:10px;
 
 width:45px;
 height:45px;
-background:#ddd;
+
 border-radius:50%;
+
+background:#ddd;
+
 display:flex;
+
 align-items:center;
+
 justify-content:center;
+
+font-size:22px;
 
 }
 
 
 
-.name{
+
+
+.message-content{
+
+flex:1;
+
+}
+
+
+
+.username{
 
 font-weight:bold;
+
 cursor:pointer;
+
+}
+
+
+
+.text{
+
+margin-top:5px;
 
 }
 
@@ -125,48 +188,76 @@ cursor:pointer;
 .time{
 
 font-size:12px;
+
 color:#777;
 
+margin-top:5px;
+
 }
 
 
 
-.system{
+
+
+.system-message{
 
 text-align:center;
-padding:10px;
+
 color:#555;
 
+padding:8px;
+
 }
 
 
 
-/* الكتابة */
 
-.write{
+
+/* شريط الكتابة */
+
+
+.input-bar{
+
+height:60px;
 
 background:#ddd;
-padding:8px;
+
 display:flex;
+
 align-items:center;
+
 gap:8px;
 
+padding:8px;
+
 }
 
 
-.write input{
+
+
+.input-bar input{
 
 flex:1;
-border:0;
-padding:12px;
-border-radius:20px;
+
+height:42px;
+
+border:none;
+
+border-radius:22px;
+
+padding:0 15px;
+
+font-size:15px;
 
 }
 
 
-.send{
+
+
+.send-btn{
 
 font-size:25px;
+
 cursor:pointer;
 
 }
@@ -174,21 +265,67 @@ cursor:pointer;
 
 
 
-/* المتواجدين */
+
+/* الشريط السفلي */
+
+
+.bottom-bar{
+
+height:55px;
+
+background:white;
+
+border-top:1px solid #ddd;
+
+display:flex;
+
+justify-content:space-around;
+
+align-items:center;
+
+}
+
+
+
+
+.bottom-icon{
+
+font-size:22px;
+
+cursor:pointer;
+
+}
+
+
+
+
+
+/* قائمة المتواجدين */
+
 
 .users-panel{
 
 position:fixed;
+
 right:-320px;
+
 top:0;
-height:100%;
+
 width:300px;
+
+height:100%;
+
 background:white;
-z-index:20;
+
+z-index:30;
+
 transition:.3s;
-box-shadow:0 0 10px #999;
+
+box-shadow:0 0 10px #777;
 
 }
+
+
 
 
 .users-panel.open{
@@ -199,39 +336,60 @@ right:0;
 
 
 
+
+
 .users-header{
 
-background:#222;
+background:#202020;
+
 color:white;
+
 padding:15px;
+
 display:flex;
+
 justify-content:space-between;
 
 }
 
 
 
+
+
 .user-item{
 
 display:flex;
+
 align-items:center;
+
 gap:10px;
+
 padding:12px;
+
 border-bottom:1px solid #ddd;
+
 cursor:pointer;
 
 }
 
 
 
-.user-avatar{
+
+
+.user-image{
 
 width:45px;
+
 height:45px;
-background:#ddd;
+
 border-radius:50%;
+
+background:#ddd;
+
 display:flex;
+
 align-items:center;
+
 justify-content:center;
 
 }
@@ -239,16 +397,83 @@ justify-content:center;
 
 
 
-/* السفلي */
 
-.bottom{
+/* بوكس المستخدم */
 
-height:55px;
+
+.user-popup{
+
+position:fixed;
+
+top:50%;
+
+left:50%;
+
+transform:translate(-50%,-50%);
+
+width:280px;
+
 background:white;
+
+border-radius:15px;
+
+padding:20px;
+
+display:none;
+
+z-index:50;
+
+box-shadow:0 0 15px #555;
+
+text-align:center;
+
+}
+
+
+
+
+
+.popup-image{
+
+width:80px;
+
+height:80px;
+
+border-radius:50%;
+
+background:#ddd;
+
+margin:auto;
+
 display:flex;
-justify-content:space-around;
+
 align-items:center;
-border-top:1px solid #ddd;
+
+justify-content:center;
+
+font-size:40px;
+
+}
+
+
+
+
+
+.user-popup button{
+
+width:100%;
+
+padding:10px;
+
+margin-top:8px;
+
+border:none;
+
+border-radius:8px;
+
+cursor:pointer;
+
+background:#eee;
 
 }
 
@@ -256,26 +481,28 @@ border-top:1px solid #ddd;
 
 </style>
 
-</head>
 
+</head>
 
 
 <body>
 
 
+<!-- الشريط العلوي -->
 
-<!-- العلوي -->
-
-<div class="top">
+<div class="top-bar">
 
 
-<div>
+<div class="site-name">
+
 شات اليمن المطور
+
 </div>
 
 
 
-<div class="icons">
+<div class="top-icons">
+
 
 <span class="icon">☰</span>
 
@@ -283,8 +510,7 @@ border-top:1px solid #ddd;
 
 <span class="icon">✉️</span>
 
-<span class="icon"
-onclick="openUsers()">
+<span class="icon" onclick="openUsers()">
 👥
 </span>
 
@@ -294,19 +520,22 @@ onclick="openUsers()">
 
 <span class="icon">👤</span>
 
-</div>
-
 
 </div>
 
 
+</div>
 
 
-<div class="room-title">
 
-🌎 الغرفة
+
+
+<div class="room-header">
+
+🌎 الغرفة العامة
 
 </div>
+
 
 
 
@@ -314,7 +543,7 @@ onclick="openUsers()">
 <!-- الرسائل -->
 
 
-<div class="messages" id="messages">
+<div id="messages" class="messages">
 
 
 </div>
@@ -323,10 +552,10 @@ onclick="openUsers()">
 
 
 
-<!-- الكتابة -->
+<!-- شريط الكتابة -->
 
 
-<div class="write">
+<div class="input-bar">
 
 
 <span class="icon">
@@ -340,10 +569,8 @@ onclick="openUsers()">
 
 
 
-<input
-id="messageInput"
-placeholder="اكتب هنا..."
->
+<input id="messageInput"
+placeholder="اكتب هنا...">
 
 
 
@@ -353,7 +580,7 @@ placeholder="اكتب هنا..."
 
 
 
-<span class="send"
+<span class="send-btn"
 onclick="sendMessage()">
 
 ➤
@@ -367,25 +594,46 @@ onclick="sendMessage()">
 
 
 
-<!-- السفلي -->
 
-<div class="bottom">
+<!-- الشريط السفلي -->
 
-<span>🔊</span>
 
-<span>▶️</span>
+<div class="bottom-bar">
 
-<span>
+
+<span class="bottom-icon">
+🔊
+</span>
+
+
+<span class="bottom-icon">
+▶️
+</span>
+
+
+<span class="bottom-icon">
 🌎
 </span>
 
-<span>⚙️</span>
 
-<span>🏠</span>
-
-<span onclick="openUsers()">
-👥
+<span class="bottom-icon">
+⚙️
 </span>
+
+
+<span class="bottom-icon">
+🏠
+</span>
+
+
+<span class="bottom-icon"
+onclick="openUsers()">
+
+👥
+
+</span>
+
+
 
 </div>
 
@@ -402,7 +650,10 @@ class="users-panel">
 
 <div class="users-header">
 
+<span>
 👥 المتواجدين
+</span>
+
 
 <span onclick="closeUsers()">
 ✖
@@ -424,24 +675,68 @@ class="users-panel">
 
 
 
+<!-- بوكس المستخدم -->
 
 
+<div id="userPopup"
+class="user-popup">
+
+
+<div class="popup-image">
+
+👤
+
+</div>
+
+
+<h3 id="popupName">
+
+اسم المستخدم
+
+</h3>
+
+
+<div id="popupInfo">
+
+20 سنة ذكر 🇾🇪
+
+</div>
+
+
+
+<button onclick="openProfile()">
+
+👤 عرض الملف الشخصي
+
+</button>
+
+
+
+<button onclick="openPrivate()">
+
+💬 رسالة
+
+</button>
+
+
+
+<button id="commandBtn"
+style="display:none"
+onclick="openCommand()">
+
+⚡ الأمر
+
+</button>
+
+
+
+</div>
+</body>
+</html>
 <script>
 
 
 const socket = io();
-
-
-
-const params =
-new URLSearchParams(location.search);
-
-
-
-const room =
-params.get("room")
-||
-localStorage.getItem("room_id");
 
 
 
@@ -451,24 +746,33 @@ localStorage.getItem("username")
 "زائر";
 
 
+const room =
+localStorage.getItem("room_id")
+||
+1;
 
 
+
+let selectedUser = "";
+
+
+
+
+// دخول الغرفة
 
 socket.emit(
 "join_room",
 {
-
 room,
-
 username
-
 }
-
 );
 
 
 
 
+
+// استقبال الرسائل العامة
 
 socket.on(
 "receive_message",
@@ -488,18 +792,24 @@ data.time
 
 
 
+
+// رسائل النظام
+
 socket.on(
 "system_message",
 (msg)=>{
 
 
-document
-.getElementById("messages")
-.innerHTML +=
+const box =
+document.getElementById("messages");
+
+
+
+box.innerHTML +=
 
 `
 
-<div class="system">
+<div class="system-message">
 
 [ ${msg} ]
 
@@ -507,6 +817,10 @@ document
 
 `;
 
+
+
+box.scrollTop =
+box.scrollHeight;
 
 
 });
@@ -517,19 +831,24 @@ document
 
 
 
+// إرسال رسالة
+
 function sendMessage(){
 
 
-let input =
-document.getElementById("messageInput");
+const input =
+document.getElementById(
+"messageInput"
+);
 
 
-let message =
+
+const text =
 input.value.trim();
 
 
 
-if(!message)return;
+if(!text)return;
 
 
 
@@ -541,7 +860,7 @@ room,
 
 username,
 
-message
+message:text
 
 }
 
@@ -560,6 +879,9 @@ input.value="";
 
 
 
+// إضافة رسالة للشاشة
+
+
 function addMessage(
 name,
 text,
@@ -567,9 +889,10 @@ time
 ){
 
 
-
-let box =
-document.getElementById("messages");
+const box =
+document.getElementById(
+"messages"
+);
 
 
 
@@ -581,25 +904,31 @@ box.innerHTML +=
 
 
 <div class="avatar">
+
 👤
+
 </div>
 
 
 
-<div>
+<div class="message-content">
 
 
-<div class="name"
-onclick="mention('${name}')">
+<div class="username"
+onclick="showUser('${name}')">
 
 ${name}
 
 </div>
 
 
-<div>
+
+<div class="text">
+
 ${text}
+
 </div>
+
 
 
 <div class="time">
@@ -609,10 +938,13 @@ ${time || getTime()}
 </div>
 
 
+
 </div>
 
 
+
 </div>
+
 
 `;
 
@@ -629,25 +961,47 @@ box.scrollHeight;
 
 
 
+
+
 function getTime(){
 
 
 let d=new Date();
 
 
-return d.getHours()
+
+return (
+
+String(d.getHours())
+.padStart(2,"0")
+
 +
+
 ":"
+
 +
-String(d.getMinutes()).padStart(2,"0")
+
+String(d.getMinutes())
+.padStart(2,"0")
+
 +
+
 " "
+
 +
+
 d.getDate()
+
 +
+
 "/"
+
 +
-(d.getMonth()+1);
+
+(d.getMonth()+1)
+
+);
+
 
 
 }
@@ -658,29 +1012,21 @@ d.getDate()
 
 
 
-function mention(name){
-
-
-document.getElementById(
-"messageInput"
-).value=name;
-
-
-}
-
-
-
-
-
-
+// =====================
 // قائمة المتواجدين
+// =====================
+
 
 
 function openUsers(){
 
+
 document
-.getElementById("usersPanel")
+.getElementById(
+"usersPanel"
+)
 .classList.add("open");
+
 
 }
 
@@ -688,13 +1034,21 @@ document
 
 function closeUsers(){
 
+
 document
-.getElementById("usersPanel")
+.getElementById(
+"usersPanel"
+)
 .classList.remove("open");
+
 
 }
 
 
+
+
+
+// استقبال المتواجدين
 
 
 socket.on(
@@ -702,30 +1056,36 @@ socket.on(
 (users)=>{
 
 
-let list =
-document.getElementById("usersList");
+const list =
+document.getElementById(
+"usersList"
+);
+
 
 
 list.innerHTML="";
 
 
 
-users.forEach(user=>{
+users.forEach(
+(user)=>{
 
 
 list.innerHTML +=
 
+
 `
 
 <div class="user-item"
-onclick="mention('${user.username}')">
+onclick="showUser('${user.username}')">
 
 
-<div class="user-avatar">
+<div class="user-image">
 
 👤
 
 </div>
+
 
 
 <div>
@@ -736,6 +1096,7 @@ ${user.username}
 
 
 </div>
+
 
 `;
 
@@ -748,8 +1109,141 @@ ${user.username}
 
 
 
-</script>
 
+
+
+
+
+
+// =====================
+// بوكس المستخدم
+// =====================
+
+
+function showUser(name){
+
+
+selectedUser=name;
+
+
+
+document.getElementById(
+"userPopup"
+)
+.style.display="block";
+
+
+
+document.getElementById(
+"popupName"
+)
+.innerHTML=name;
+
+
+
+document.getElementById(
+"popupInfo"
+)
+.innerHTML=
+
+"20 سنة ذكر 🇾🇪";
+
+
+
+}
+
+
+
+
+// إغلاق البوكس بالضغط خارجه
+
+document.addEventListener(
+"click",
+function(e){
+
+
+let popup =
+document.getElementById(
+"userPopup"
+);
+
+
+
+if(
+popup.style.display==="block"
+&&
+!popup.contains(e.target)
+&&
+!e.target.classList.contains("username")
+){
+
+popup.style.display="none";
+
+}
+
+
+});
+
+
+
+
+
+
+// الملف الشخصي
+
+
+function openProfile(){
+
+
+location.href=
+
+"profile.html?user="+selectedUser;
+
+
+}
+
+
+
+
+
+
+// الخاص
+
+
+function openPrivate(){
+
+
+location.href=
+
+"private.html?user="+selectedUser;
+
+
+}
+
+
+
+
+
+
+// الأمر
+
+function openCommand(){
+
+
+alert(
+"فتح أوامر الإدارة"
+);
+
+
+}
+
+
+
+
+
+
+
+</script>
 
 
 </body>

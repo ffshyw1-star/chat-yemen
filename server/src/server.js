@@ -17,6 +17,7 @@ require("./database/ranks");
 const { Server } = require("socket.io");
 
 
+
 const server = http.createServer(app);
 
 
@@ -24,7 +25,9 @@ const server = http.createServer(app);
 const io = new Server(server,{
 
 cors:{
+
 origin:"*"
+
 }
 
 });
@@ -32,35 +35,57 @@ origin:"*"
 
 
 
-// Socket الدردشة العامة
+
+// =====================
+// Socket Systems
+// =====================
+
+
+// الدردشة العامة
 
 require("./socket/chatSocket")(io);
 
 
-// Socket الخاص
+
+// الرسائل الخاصة
 
 require("./socket/privateSocket")(io);
 
 
-// Socket المتواجدين
+
+// المتواجدين
 
 require("./socket/onlineSocket")(io);
 
 
 
-// Socket الإدارة
+// الإدارة
 
 const adminSocket =
 require("./socket/adminSocket")(io);
 
 
 
-// حفظه للاستخدام في Routes
-
 app.set(
 "adminSocket",
 adminSocket
 );
+
+
+
+
+// الإشعارات
+
+const notificationSocket =
+require("./socket/notificationSocket")(io);
+
+
+
+app.set(
+"notificationSocket",
+notificationSocket
+);
+
 
 
 

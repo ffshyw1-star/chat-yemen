@@ -1,59 +1,48 @@
-const db = require("../database/database");
+module.exports = function(io){
 
 
-module.exports = (io)=>{
-
-
-io.on("connection",(socket)=>{
-
-
-console.log("User Connected:",socket.id);
+io.on(
+"connection",
+(socket)=>{
 
 
 
-// دخول غرفة
+// دخول الغرفة
 
 socket.on(
 "join_room",
 (data)=>{
 
 
-const roomId =
-data.room;
-
-
-const username =
-data.username;
-
-
-
 socket.join(
-"room_"+roomId
+"room_"+data.room
 );
 
 
 
 socket.username =
-username;
+data.username;
+
 
 socket.room =
-roomId;
+data.room;
 
 
 
-// رسالة النظام
-
-io.to("room_"+roomId)
+io.to(
+"room_"+data.room
+)
 .emit(
 "system_message",
-
-`انضم ${username} إلى الغرفة`
-
+`دخل ${data.username} إلى الغرفة`
 );
 
 
 
 });
+
+
+
 
 
 
@@ -65,42 +54,19 @@ socket.on(
 (data)=>{
 
 
-const {
-room,
-username,
-message
-}=data;
-
-
-
-const time =
-new Date()
-.toLocaleString(
-"ar-EG",
-{
-hour:"2-digit",
-minute:"2-digit",
-day:"2-digit",
-month:"2-digit"
-}
-);
-
-
-
-// إرسال للجميع
-
 io.to(
-"room_"+room
+"room_"+data.room
 )
 .emit(
 "receive_message",
 {
 
-username,
+username:data.username,
 
-message,
+message:data.message,
 
-time
+time:new Date()
+.toLocaleTimeString("ar")
 
 }
 
@@ -114,26 +80,27 @@ time
 
 
 
-// خروج المستخدم
+
+
+
+// خروج
 
 socket.on(
 "disconnect",
 ()=>{
 
 
-if(socket.room && socket.username){
+if(socket.username){
 
 
 io.to(
 "room_"+socket.room
 )
 .emit(
-
 "system_message",
-
-`غادر ${socket.username}`
-
+`غادر ${socket.username} الغرفة`
 );
+
 
 
 }
@@ -145,6 +112,7 @@ io.to(
 
 
 });
+
 
 
 };

@@ -142,4 +142,26 @@ app.get("/api/health", (req, res) => {
 
 app.use((req, res) => {
 
-    res.status(404).json
+    res.status(404).json({
+        success: false,
+        message: "الصفحة غير موجودة"
+    });
+
+});
+
+// =======================
+// Error Handler
+// =======================
+
+app.use((err, req, res, next) => {
+
+    console.error(err);
+
+    res.status(500).json({
+        success: false,
+        message: "خطأ داخلي في الخادم"
+    });
+
+});
+
+module.exports = app;

@@ -1,0 +1,15 @@
+node_modules/
+
+.env
+
+database/chat.db
+
+uploads/
+
+logs/
+
+backups/
+
+npm-debug.log
+
+yarn-error.log

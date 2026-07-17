@@ -1,13 +1,7 @@
 const db = require("./database");
 
 
-// =============================
-// إنشاء جداول قاعدة البيانات
-// =============================
-
-
 db.serialize(()=>{
-
 
 
 // جدول المستخدمين
@@ -181,7 +175,57 @@ created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 
 
 
+
+// جدول تفاعلات المنشورات
+
+db.run(`
+
+CREATE TABLE IF NOT EXISTS reactions (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+post_id INTEGER,
+
+user_id INTEGER,
+
+reaction TEXT,
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+)
+
+`);
+
+
+
+
+
+// جدول المنشورات
+
+db.run(`
+
+CREATE TABLE IF NOT EXISTS posts (
+
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+user_id INTEGER,
+
+username TEXT,
+
+content TEXT,
+
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+
+)
+
+`);
+
+
+
+
+
+
 console.log("✅ Database Tables Loaded");
 
 
-});
+});ض

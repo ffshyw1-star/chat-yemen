@@ -106,7 +106,7 @@ app.use("/api/dashboard",
 );
 
 //app.use("/api/settings",
-    require("./routes/settings")
+    require("./routes/settings"//)
 );
 
 // =======================

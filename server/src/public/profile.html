@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>الملف الشخصي</title>
+
+
+<style>
+
+
+body{
+
+margin:0;
+font-family:tahoma;
+background:#f3f3f3;
+
+}
+
+
+
+.cover{
+
+height:160px;
+background:#333;
+
+}
+
+
+
+.profile{
+
+background:white;
+margin-top:-50px;
+border-radius:20px 20px 0 0;
+padding:20px;
+text-align:center;
+
+}
+
+
+
+.avatar{
+
+width:100px;
+height:100px;
+border-radius:50%;
+background:#ddd;
+margin:auto;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:45px;
+
+}
+
+
+
+.name{
+
+font-size:22px;
+font-weight:bold;
+margin-top:10px;
+
+}
+
+
+
+.info{
+
+color:#555;
+margin:10px;
+
+}
+
+
+
+
+button{
+
+width:90%;
+padding:12px;
+margin:8px;
+
+border:0;
+border-radius:20px;
+
+font-size:16px;
+
+cursor:pointer;
+
+}
+
+
+
+.like{
+
+background:#ffdddd;
+
+}
+
+
+
+.message{
+
+background:#ddd;
+
+}
+
+
+
+
+.card{
+
+background:white;
+
+margin:10px;
+padding:15px;
+border-radius:15px;
+
+}
+
+
+
+.friend{
+
+display:inline-block;
+
+text-align:center;
+margin:10px;
+
+}
+
+
+
+.friend img{
+
+width:55px;
+height:55px;
+border-radius:50%;
+background:#ddd;
+
+}
+
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="cover"></div>
+
+
+
+<div class="profile">
+
+
+<div class="avatar">
+
+👤
+
+</div>
+
+
+<div class="name"
+id="username">
+
+أبو محمد
+
+</div>
+
+
+
+<div class="info">
+
+20 سنة ذكر 🇾🇪
+
+</div>
+
+
+
+<div class="info">
+
+متصل الآن 🟢
+
+</div>
+
+
+
+<button class="like"
+onclick="likeProfile()">
+
+❤️ إعجاب
+
+<span id="likes">
+0
+</span>
+
+</button>
+
+
+
+<button class="message"
+onclick="sendPrivate()">
+
+💬 رسالة
+
+</button>
+
+
+
+</div>
+
+
+
+
+
+<div class="card">
+
+
+<h3>
+المعلومات
+</h3>
+
+
+<p>
+نبذة عن المستخدم
+</p>
+
+
+<p>
+تاريخ التسجيل
+</p>
+
+
+<p>
+آخر ظهور
+</p>
+
+
+</div>
+
+
+
+
+
+
+<div class="card">
+
+
+<h3>
+الأصدقاء
+</h3>
+
+
+
+<div class="friend">
+
+<img>
+
+<br>
+
+أحمد
+
+</div>
+
+
+<div class="friend">
+
+<img>
+
+<br>
+
+محمد
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+<script>
+
+
+let liked=false;
+
+
+
+function likeProfile(){
+
+
+if(liked)
+return;
+
+
+
+liked=true;
+
+
+
+let count =
+document.getElementById(
+"likes"
+);
+
+
+
+count.innerHTML =
+Number(count.innerHTML)+1;
+
+
+
+}
+
+
+
+
+
+
+function sendPrivate(){
+
+
+let user =
+new URLSearchParams(
+location.search
+)
+.get("user");
+
+
+
+location.href=
+"private.html?user="+user;
+
+
+}
+
+
+
+</script>
+
+
+
+</body>
+
+</html>

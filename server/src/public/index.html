@@ -1,45 +1,99 @@
-┌──────────────────────────┐
-│                          │
-│   شات اليمن المطور       │
-│                          │
-│  [ دخول الزوار ]         │
-│                          │
-│  [ دخول الأعضاء ]        │
-│                          │
-│  [ تسجيل ]               │
-│                          │
-└──────────────────────────┘
-┌──────────────────────────┐
-│ دخول الزوار               │
-├──────────────────────────┤
-│ اكتب اسمك هنا             │
-│                          │
-│ الجنس ▼                  │
-│  ذكر                     │
-│  أنثى                    │
-│  آخر                     │
-│                          │
-│ [ دخول ]                 │
-└──────────────────────────┘
-┌──────────────────────────┐
-│ دخول الأعضاء              │
-├──────────────────────────┤
-│ اسم المستخدم              │
-│ كلمة المرور               │
-│                          │
-│ [ دخول ]                 │
-└──────────────────────────┘
-┌──────────────────────────┐
-│ إنشاء حساب                │
-├──────────────────────────┤
-│ اسم المستخدم              │
-│ كلمة المرور               │
-│ البريد الإلكتروني         │
-│                          │
-│ [ إنشاء حساب ]            │
-└──────────────────────────┘
-POST /api/auth/guest{
- username,
- gender
-}token
-rooms.htmlPOST /api/auth/loginPOST /api/auth/register
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>شات اليمن المطور</title>
+
+<style>
+
+body{
+    font-family:Tahoma;
+    background:#f2f2f2;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.box{
+    background:white;
+    padding:30px;
+    width:320px;
+    text-align:center;
+    border-radius:15px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin:8px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+
+</style>
+
+</head>
+
+<body>
+
+
+<div class="box">
+
+<h2>
+شات اليمن المطور
+</h2>
+
+
+<button onclick="guest()">
+دخول الزوار
+</button>
+
+
+<button onclick="member()">
+دخول الأعضاء
+</button>
+
+
+<button onclick="register()">
+تسجيل
+</button>
+
+
+</div>
+
+
+
+<script>
+
+
+function guest(){
+
+location.href="guest.html";
+
+}
+
+
+function member(){
+
+location.href="login.html";
+
+}
+
+
+function register(){
+
+location.href="register.html";
+
+}
+
+
+</script>
+
+
+</body>
+</html>

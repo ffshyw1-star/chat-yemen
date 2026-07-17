@@ -1,10 +1,11 @@
-const express = require("express");
+٨const express = require("express");
 const path = require("path");
+
 
 const app = express();
 
 
-// قراءة JSON
+// Middleware
 
 app.use(express.json());
 
@@ -15,12 +16,12 @@ app.use(express.urlencoded({
 
 
 
-// الملفات العامة
+// Public Files
 
 app.use(
-    express.static(
-        path.join(__dirname,"../public")
-    )
+express.static(
+path.join(__dirname,"../public")
+)
 );
 
 
@@ -31,7 +32,7 @@ app.use(
 // =====================
 
 
-// المصادقة
+// تسجيل الدخول والتسجيل
 
 const authRoutes =
 require("./routes/authRoutes");
@@ -41,6 +42,7 @@ app.use(
 "/api/auth",
 authRoutes
 );
+
 
 
 
@@ -59,6 +61,7 @@ roomsRoutes
 
 
 
+
 // الإدارة
 
 const adminRoutes =
@@ -69,6 +72,7 @@ app.use(
 "/api/admin",
 adminRoutes
 );
+
 
 
 
@@ -88,8 +92,24 @@ notificationRoutes
 
 
 
+// نظام تفاعلات المنشورات
 
-// اختبار API
+const reactionRoutes =
+require("./routes/reactions");
+
+
+app.use(
+"/api/reactions",
+reactionRoutes
+);
+
+
+
+
+
+
+
+// اختبار السيرفر
 
 app.get("/api/test",(req,res)=>{
 

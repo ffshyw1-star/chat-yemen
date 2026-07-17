@@ -1,4 +1,4 @@
-٨const express = require("express");
+const express = require("express");
 const path = require("path");
 
 
@@ -16,7 +16,7 @@ app.use(express.urlencoded({
 
 
 
-// Public Files
+// الملفات العامة
 
 app.use(
 express.static(
@@ -32,7 +32,7 @@ path.join(__dirname,"../public")
 // =====================
 
 
-// تسجيل الدخول والتسجيل
+// المصادقة
 
 const authRoutes =
 require("./routes/authRoutes");
@@ -101,6 +101,21 @@ require("./routes/reactions");
 app.use(
 "/api/reactions",
 reactionRoutes
+);
+
+
+
+
+
+// نظام المنشورات
+
+const postsRoutes =
+require("./routes/posts");
+
+
+app.use(
+"/api/posts",
+postsRoutes
 );
 
 

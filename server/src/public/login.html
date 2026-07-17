@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>
+دخول الأعضاء
+</title>
+
+
+<style>
+
+body{
+
+font-family:tahoma;
+background:#eee;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+
+}
+
+
+.box{
+
+background:white;
+width:320px;
+padding:25px;
+border-radius:15px;
+text-align:center;
+
+}
+
+
+input,button{
+
+width:100%;
+padding:12px;
+margin:8px 0;
+
+}
+
+
+button{
+
+background:#4caf50;
+color:white;
+border:0;
+border-radius:8px;
+
+}
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+<h2>
+دخول الأعضاء
+</h2>
+
+
+<input
+id="username"
+placeholder="اسم المستخدم">
+
+
+<input
+id="password"
+type="password"
+placeholder="كلمة المرور">
+
+
+<button onclick="login()">
+
+دخول
+
+</button>
+
+
+</div>
+
+
+
+
+<script>
+
+
+async function login(){
+
+
+let username =
+document.getElementById("username").value;
+
+
+let password =
+document.getElementById("password").value;
+
+
+
+let res =
+await fetch("/api/auth/login",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+username,
+password
+
+})
+
+});
+
+
+
+let data =
+await res.json();
+
+
+
+if(data.token){
+
+
+localStorage.setItem(
+"token",
+data.token
+);
+
+
+localStorage.setItem(
+"username",
+data.user.username
+);
+
+
+location.href="rooms.html";
+
+
+}else{
+
+
+alert(data.error);
+
+}
+
+
+}
+
+
+</script>
+
+
+</body>
+</html>

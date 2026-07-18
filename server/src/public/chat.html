@@ -1,332 +1,91 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>شات اليمن المطور</title>
-    <!-- استيراد أيقونات FontAwesome لشاشات العرض المميّزة -->
-    <link rel="stylesheet" href="https://cloudflare.com">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
 
-        body {
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+<meta charset="UTF-8">
 
-        /* حاوية الشات الرئيسية */
-        .chat-container {
-            width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            background-color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-        @media (min-width: 481px) {
-            .chat-container {
-                height: 90vh;
-                border-radius: 12px;
-                overflow: hidden;
-            }
-        }
+<title>شات اليمن المطور</title>
 
-        /* 1. الشريط العلوي */
-        .top-bar {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-        }
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
 
-        .top-bar-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-        }
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
 
-        .top-bar-icons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap"
+rel="stylesheet">
 
-        .top-bar-icons .right-actions, 
-        .top-bar-icons .left-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
+<script src="/socket.io/socket.io.js"></script>
 
-        .top-bar-icons i, .top-bar-icons span {
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: opacity 0.2s;
-        }
+<style>
 
-        .top-bar-icons i:hover {
-            opacity: 0.8;
-        }
+*{
 
-        .invite-btn {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
+margin:0;
 
-        /* 2. منطقة الرسائل الوسطى */
-        .chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            background-color: #f7f9fa;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+padding:0;
 
-        /* رسالة المستخدم */
-        .message-block {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            max-width: 85%;
-        }
+box-sizing:border-box;
 
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            color: #666;
-        }
+font-family:'Tajawal',sans-serif;
 
-        .message-content {
-            background-color: #ffffff;
-            padding: 10px 12px;
-            border-radius: 0 12px 12px 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            position: relative;
-        }
+}
 
-        .user-name {
-            font-weight: bold;
-            color: #333;
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
+body{
 
-        .user-text {
-            color: #555;
-            font-size: 0.95rem;
-            line-height: 1.4;
-        }
+background:#ece5dd;
 
-        .message-time {
-            font-size: 0.75rem;
-            color: #999;
-            text-align: left;
-            margin-top: 5px;
-        }
+height:100vh;
 
-        /* رسائل النظام */
-        .system-message {
-            align-self: center;
-            background-color: #e2f0d9;
-            color: #385723;
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            border: 1px solid #c5e0b4;
-            text-align: center;
-            max-width: 90%;
-        }
+overflow:hidden;
 
-        /* 3. شريط الكتابة */
-        .input-bar {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            background-color: #ffffff;
-            border-top: 1px solid #eee;
-            gap: 10px;
-        }
+}
 
-        .send-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            transform: scaleX(-1); /* لقلب سهم الإرسال باتجاه اليمين باللغة العربية */
-        }
+header{
 
-        .input-actions-right, .input-actions-left {
-            display: flex;
-            gap: 12px;
-            color: #666;
-            font-size: 1.2rem;
-            cursor: pointer;
-        }
+height:60px;
 
-        .chat-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            padding: 8px 15px;
-            font-size: 0.95rem;
-            outline: none;
-            background-color: #f8f9fa;
-        }
+background:#075E54;
 
-        .chat-input:focus {
-            border-color: #007bff;
-            background-color: #fff;
-        }
+color:#fff;
 
-        /* 4. الشريط السفلي */
-        .bottom-bar {
-            background-color: #343a40;
-            color: #ced4da;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 12px 0;
-            border-top: 1px solid #454d55;
-        }
+display:flex;
 
-        .bottom-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: color 0.2s;
-            position: relative;
-        }
+align-items:center;
 
-        .bottom-nav-item:hover, .bottom-nav-item.active {
-            color: #007bff;
-        }
+justify-content:space-between;
 
-        .room-text {
-            font-size: 0.75rem;
-            margin-top: 2px;
-        }
-    </style>
-</head>
-<body>
+padding:0 15px;
 
-    <div class="chat-container">
-        
-        <!-- 1. الشريط العلوي -->
-        <header class="top-bar">
-            <div class="top-bar-title">شات اليمن المطور</div>
-            <div class="top-bar-icons">
-                <div class="right-actions">
-                    <i class="fa-solid fa-user" title="الملف الشخصي"></i>
-                    <i class="fa-solid fa-mailbox" title="البريد">📭</i> <!-- استبدال برمز مخصص إن لم يتوفر بالنسخة مجاناً -->
-                    <i class="fa-solid fa-heart" title="المفضلة" style="color: #ff4757;"></i>
-                    <div class="invite-btn">دعوة <i class="fa-solid fa-plus"></i></div>
-                </div>
-                <div class="left-actions">
-                    <i class="fa-solid fa-envelope" title="الرسائل"></i>
-                    <i class="fa-solid fa-cart-shopping" title="المتجر"></i>
-                    <i class="fa-solid fa-bars" title="القائمة"></i>
-                </div>
-            </div>
-        </header>
+}
 
-        <!-- 2. منطقة الرسائل -->
-        <main class="chat-messages">
-            
-            <!-- رسالة مستخدم -->
-            <div class="message-block">
-                <div class="user-avatar">
-                    <i class="fa-solid fa-user-astronaut"></i>
-                </div>
-                <div class="message-content">
-                    <div class="user-name">أحمد اليماني</div>
-                    <div class="user-text">السلام عليكم ورحمة الله وبركاته، أهلاً بالجميع في شات اليمن المطور!</div>
-                    <div class="message-time">17:15 16/05</div>
-                </div>
-            </div>
+.logo{
 
-            <!-- رسائل النظام -->
-            <div class="system-message">
-                [ هذا المستخدم رتبة مميز ]
-            </div>
+font-size:22px;
 
-        </main>
+font-weight:bold;
 
-        <!-- 3. شريط الكتابة -->
-        <div class="input-bar">
-            <button class="send-btn" title="إرسال">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-            
-            <div class="input-actions-right">
-                <i class="fa-solid fa-microphone" title="تسجيل صوتي"></i>
-            </div>
+}
 
-            <input type="text" class="chat-input" placeholder="اكتب هنا...">
+.top-icons{
 
-            <div class="input-actions-left">
-                <i class="fa-regular fa-face-smile" title="إيموجي"></i>
-                <i class="fa-solid fa-plus" title="مرفقات"></i>
-            </div>
-        </div>
+display:flex;
 
-        <!-- 4. الشريط السفلي -->
-        <footer class="bottom-bar">
-            <div class="bottom-nav-item" title="المتصلين">
-                <i class="fa-solid fa-users"></i>
-            </div>
-            <div class="bottom-nav-item" title="الرئيسية">
-                <i class="fa-solid fa-house"></i>
-            </div>
-            <div class="bottom-nav-item" title="الإعدادات">
-                <i class="fa-solid fa-gear"></i>
-            </div>
-            <div class="bottom-nav-item active" title="الغرف">
-                <i class="fa-solid fa-earth-americas"></i>
-                <span class="room-text">الغرفة</span>
-            </div>
-            <div class="bottom-nav-item" title="الصوت">
-                <i class="fa-solid fa-volume-high"></i>
-            </div>
-            <div class="bottom-nav-item" title="تشغيل">
-                <i class="fa-solid fa-play"></i>
-            </div>
-        </footer>
+align-items:center;
 
-    </div>
+gap:18px;
 
-</body>
-</html>
+font-size:22px;
+
+cursor:pointer;
+
+}
+
+.icon{
+
+position:relative;

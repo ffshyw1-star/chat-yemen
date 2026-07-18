@@ -1,648 +1,332 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>شات اليمن المطور</title>
-<script src="/socket.io/socket.io.js"></script>
-<style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Tajawal, Tahoma, Arial;
-  background: #f3f3f3;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-.top-bar {
-  height: 60px;
-  background: #222;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  flex-shrink: 0;
-}
-.site-name { font-size: 18px; font-weight: bold; }
-.top-icons { display: flex; gap: 12px; }
-.icon { font-size: 23px; cursor: pointer; user-select: none; }
-.room-header {
-  background: white;
-  padding: 10px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-.message {
-  display: flex;
-  gap: 10px;
-  background: white;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 12px;
-}
-.avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 22px;
-}
-.username { font-weight: bold; cursor: pointer; }
-.time { font-size: 12px; color: #777; }
-.system-message {
-  text-align: center;
-  color: #555;
-  padding: 10px;
-  font-size: 13px;
-}
-.input-bar {
-  height: 60px;
-  background: #ddd;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  flex-shrink: 0;
-}
-.input-bar input {
-  flex: 1;
-  height: 42px;
-  border: 0;
-  border-radius: 20px;
-  padding: 10px;
-  outline: none;
-  font-family: inherit;
-}
-.send-btn {
-  font-size: 22px;
-  cursor: pointer;
-  background: #28a745;
-  color: white;
-  border: 0;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.send-btn:hover { background: #1e7e34; }
-.bottom-bar {
-  height: 55px;
-  background: white;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  border-top: 1px solid #ddd;
-  flex-shrink: 0;
-}
-.tab-item { cursor: pointer; color: #555; font-size: 14px; }
-.users-panel {
-  position: fixed;
-  top: 0;
-  right: -320px;
-  width: 300px;
-  height: 100%;
-  background: white;
-  z-index: 30;
-  transition: 0.3s;
-  box-shadow: 0 0 10px #777;
-  overflow-y: auto;
-}
-.users-panel.open { right: 0; }
-.users-header {
-  background: #222;
-  color: white;
-  padding: 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.user-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  border-bottom: 1px solid #ddd;
-  cursor: pointer;
-}
-.user-item:hover { background: #f5f5f5; }
-.user-image {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 22px;
-}
-.user-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px;
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  display: none;
-  z-index: 50;
-  box-shadow: 0 0 15px #555;
-  text-align: center;
-}
-.popup-image {
-  width: 80px;
-  height: 80px;
-  background: #ddd;
-  border-radius: 50%;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-}
-.user-popup button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border: 0;
-  border-radius: 10px;
-  cursor: pointer;
-  background: #eee;
-  font-size: 14px;
-  font-family: inherit;
-}
-.user-popup button:hover { background: #ddd; }
-.user-popup button.primary { background: #28a745; color: white; }
-.user-popup button.danger { background: #c44; color: white; }
-#commandBox {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 320px;
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  z-index: 60;
-  box-shadow: 0 0 15px #555;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-.command-title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
-}
-.command-section {
-  margin-bottom: 12px;
-  padding: 8px;
-  background: #f7f7f7;
-  border-radius: 8px;
-}
-.command-section-title {
-  font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 6px;
-  color: #555;
-}
-.command-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-.command-grid button {
-  padding: 8px;
-  border: 0;
-  border-radius: 8px;
-  cursor: pointer;
-  background: #eee;
-  font-size: 13px;
-  font-family: inherit;
-}
-.command-grid button:hover { background: #ddd; }
-.command-grid button.danger { background: #c44; color: white; }
-.command-grid button.primary { background: #28a745; color: white; }
-.overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 45;
-}
-.overlay.show { display: block; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شات اليمن المطور</title>
+    <!-- استيراد أيقونات FontAwesome لشاشات العرض المميّزة -->
+    <link rel="stylesheet" href="https://cloudflare.com">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* حاوية الشات الرئيسية */
+        .chat-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        @media (min-width: 481px) {
+            .chat-container {
+                height: 90vh;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+        }
+
+        /* 1. الشريط العلوي */
+        .top-bar {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+        }
+
+        .top-bar-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .top-bar-icons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar-icons .right-actions, 
+        .top-bar-icons .left-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .top-bar-icons i, .top-bar-icons span {
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: opacity 0.2s;
+        }
+
+        .top-bar-icons i:hover {
+            opacity: 0.8;
+        }
+
+        .invite-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 2. منطقة الرسائل الوسطى */
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f7f9fa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* رسالة المستخدم */
+        .message-block {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            max-width: 85%;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .message-content {
+            background-color: #ffffff;
+            padding: 10px 12px;
+            border-radius: 0 12px 12px 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .user-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .user-text {
+            color: #555;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: left;
+            margin-top: 5px;
+        }
+
+        /* رسائل النظام */
+        .system-message {
+            align-self: center;
+            background-color: #e2f0d9;
+            color: #385723;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid #c5e0b4;
+            text-align: center;
+            max-width: 90%;
+        }
+
+        /* 3. شريط الكتابة */
+        .input-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #ffffff;
+            border-top: 1px solid #eee;
+            gap: 10px;
+        }
+
+        .send-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transform: scaleX(-1); /* لقلب سهم الإرسال باتجاه اليمين باللغة العربية */
+        }
+
+        .input-actions-right, .input-actions-left {
+            display: flex;
+            gap: 12px;
+            color: #666;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #f8f9fa;
+        }
+
+        .chat-input:focus {
+            border-color: #007bff;
+            background-color: #fff;
+        }
+
+        /* 4. الشريط السفلي */
+        .bottom-bar {
+            background-color: #343a40;
+            color: #ced4da;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid #454d55;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+            position: relative;
+        }
+
+        .bottom-nav-item:hover, .bottom-nav-item.active {
+            color: #007bff;
+        }
+
+        .room-text {
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+    </style>
 </head>
 <body>
 
-<!-- الشريط العلوي -->
-<div class="top-bar">
-  <div class="site-name">شات اليمن المطور</div>
-  <div class="top-icons">
-    <span class="icon">☰</span>
-    <span class="icon">🛒</span>
-    <span class="icon">✉️</span>
-    <span class="icon" onclick="openUsers()">👥</span>
-    <span class="icon">❤️</span>
-    <span class="icon">📭</span>
-    <span class="icon">👤</span>
-  </div>
-</div>
+    <div class="chat-container">
+        
+        <!-- 1. الشريط العلوي -->
+        <header class="top-bar">
+            <div class="top-bar-title">شات اليمن المطور</div>
+            <div class="top-bar-icons">
+                <div class="right-actions">
+                    <i class="fa-solid fa-user" title="الملف الشخصي"></i>
+                    <i class="fa-solid fa-mailbox" title="البريد">📭</i> <!-- استبدال برمز مخصص إن لم يتوفر بالنسخة مجاناً -->
+                    <i class="fa-solid fa-heart" title="المفضلة" style="color: #ff4757;"></i>
+                    <div class="invite-btn">دعوة <i class="fa-solid fa-plus"></i></div>
+                </div>
+                <div class="left-actions">
+                    <i class="fa-solid fa-envelope" title="الرسائل"></i>
+                    <i class="fa-solid fa-cart-shopping" title="المتجر"></i>
+                    <i class="fa-solid fa-bars" title="القائمة"></i>
+                </div>
+            </div>
+        </header>
 
-<div class="room-header" id="roomHeader">غرفة الدردشة</div>
+        <!-- 2. منطقة الرسائل -->
+        <main class="chat-messages">
+            
+            <!-- رسالة مستخدم -->
+            <div class="message-block">
+                <div class="user-avatar">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div class="message-content">
+                    <div class="user-name">أحمد اليماني</div>
+                    <div class="user-text">السلام عليكم ورحمة الله وبركاته، أهلاً بالجميع في شات اليمن المطور!</div>
+                    <div class="message-time">17:15 16/05</div>
+                </div>
+            </div>
 
-<!-- الرسائل -->
-<div class="messages" id="messages"></div>
+            <!-- رسائل النظام -->
+            <div class="system-message">
+                [ هذا المستخدم رتبة مميز ]
+            </div>
 
-<!-- الكتابة -->
-<div class="input-bar">
-  <input type="text" id="messageInput" placeholder="اكتب رسالتك..." onkeydown="if(event.key==='Enter')sendMessage()">
-  <button class="send-btn" onclick="sendMessage()">➤</button>
-</div>
+        </main>
 
-<!-- الشريط السفلي -->
-<div class="bottom-bar">
-  <span class="tab-item">💬 محادثات</span>
-  <span class="tab-item">👥 أصدقاء</span>
-  <span class="tab-item">⚙️ إعدادات</span>
-</div>
+        <!-- 3. شريط الكتابة -->
+        <div class="input-bar">
+            <button class="send-btn" title="إرسال">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+            
+            <div class="input-actions-right">
+                <i class="fa-solid fa-microphone" title="تسجيل صوتي"></i>
+            </div>
 
-<!-- المتواجدين -->
-<div class="users-panel" id="usersPanel">
-  <div class="users-header">
-    <span>المتواجدون الآن</span>
-    <span style="cursor:pointer" onclick="closeUsers()">✕</span>
-  </div>
-  <div id="usersList"></div>
-</div>
+            <input type="text" class="chat-input" placeholder="اكتب هنا...">
 
-<!-- بوكس المستخدم -->
-<div class="user-popup" id="userPopup">
-  <div class="popup-image">👤</div>
-  <div id="popupName" style="font-weight:bold; font-size:18px; margin-top:10px;"></div>
-  <div id="popupInfo" style="color:#777; margin-bottom:12px;">20 سنة ذكر 🇾🇪</div>
-  <button class="primary" onclick="openProfile()">الملف الشخصي</button>
-  <button onclick="openPrivate()">رسالة خاصة</button>
-  <button id="commandBtn" style="display:none;" onclick="showCommands()">⚙️ أوامر إدارية</button>
-  <button onclick="document.getElementById('userPopup').style.display='none'">إغلاق</button>
-</div>
+            <div class="input-actions-left">
+                <i class="fa-regular fa-face-smile" title="إيموجي"></i>
+                <i class="fa-solid fa-plus" title="مرفقات"></i>
+            </div>
+        </div>
 
-<!-- خلفية النوافذ -->
-<div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
+        <!-- 4. الشريط السفلي -->
+        <footer class="bottom-bar">
+            <div class="bottom-nav-item" title="المتصلين">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="bottom-nav-item" title="الرئيسية">
+                <i class="fa-solid fa-house"></i>
+            </div>
+            <div class="bottom-nav-item" title="الإعدادات">
+                <i class="fa-solid fa-gear"></i>
+            </div>
+            <div class="bottom-nav-item active" title="الغرف">
+                <i class="fa-solid fa-earth-americas"></i>
+                <span class="room-text">الغرفة</span>
+            </div>
+            <div class="bottom-nav-item" title="الصوت">
+                <i class="fa-solid fa-volume-high"></i>
+            </div>
+            <div class="bottom-nav-item" title="تشغيل">
+                <i class="fa-solid fa-play"></i>
+            </div>
+        </footer>
 
-<!-- نافذة الأوامر -->
-<div id="commandBox">
-  <div class="command-title">⚙️ أوامر إدارة</div>
-  <div id="popupCommandName" style="text-align:center; color:#777; margin-bottom:12px;"></div>
-
-  <div class="command-section">
-    <div class="command-section-title">إجراءات عامة</div>
-    <div class="command-grid">
-      <button onclick="muteUser()">🔇 كتم (5د)</button>
-      <button onclick="kickUser()">🚪 طرد</button>
-      <button class="danger" onclick="banUser()">🚫 حظر</button>
-      <button class="danger" onclick="deleteMessage()">🗑 حذف رسالة</button>
     </div>
-  </div>
 
-  <div class="command-section">
-    <div class="command-section-title">تعديل البيانات</div>
-    <div class="command-grid">
-      <button onclick="renameUser()">✏️ تعديل الاسم</button>
-      <button onclick="changeRank()">⬆️ تغيير الرتبة</button>
-      <button onclick="historyUser()">📝 سجل العضو</button>
-    </div>
-  </div>
-
-  <div class="command-section" id="ownerCommands">
-    <div class="command-section-title">أوامر المالك</div>
-    <div class="command-grid">
-      <button class="danger" onclick="deleteUser()">🗑 حذف العضوية</button>
-    </div>
-  </div>
-
-  <button onclick="closeCommands()" style="width:100%; margin-top:10px; padding:10px; border:0; border-radius:10px; background:#eee; cursor:pointer; font-family:inherit;">إغلاق</button>
-</div>
-
-<script>
-const socket = io();
-const username = localStorage.getItem("username") || "زائر";
-const room = localStorage.getItem("room_id") || 1;
-const rank = localStorage.getItem("rank") || "guest";
-let selectedUser = "";
-let selectedUserId = "";
-
-// مساعد: تهريب النص لمنع XSS
-function esc(s) {
-  if (s == null) return "";
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function $(id) { return document.getElementById(id); }
-
-// دخول الغرفة
-socket.emit("join_room", { room, username });
-
-// تحديث عنوان الغرفة
-const headerEl = $("roomHeader");
-if (headerEl) headerEl.textContent = "غرفة رقم " + room;
-
-// استقبال الرسائل العامة
-socket.on("receive_message", (data) => {
-  addMessage(data.username, data.message, data.time);
-});
-
-// رسائل النظام
-socket.on("system_message", (msg) => {
-  const box = $("messages");
-  if (!box) return;
-  const div = document.createElement("div");
-  div.className = "system-message";
-  div.textContent = "[ " + msg + " ]";
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-});
-
-// إرسال رسالة
-function sendMessage() {
-  const input = $("messageInput");
-  if (!input) return;
-  const message = input.value.trim();
-  if (!message) return;
-  socket.emit("send_message", { room, username, message });
-  input.value = "";
-}
-
-// عرض الرسالة (باستخدام DOM الآمن بدلاً من innerHTML)
-function addMessage(name, text, time) {
-  const box = $("messages");
-  if (!box) return;
-
-  const wrap = document.createElement("div");
-  wrap.className = "message";
-
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = "👤";
-
-  const body = document.createElement("div");
-  body.style.flex = "1";
-  body.style.minWidth = "0";
-
-  const nameEl = document.createElement("div");
-  nameEl.className = "username";
-  nameEl.textContent = name;
-  nameEl.addEventListener("click", () => showUser(name));
-
-  const textEl = document.createElement("div");
-  textEl.textContent = text;
-  textEl.style.wordBreak = "break-word";
-
-  const timeEl = document.createElement("div");
-  timeEl.className = "time";
-  timeEl.textContent = time || getTime();
-
-  body.appendChild(nameEl);
-  body.appendChild(textEl);
-  body.appendChild(timeEl);
-
-  wrap.appendChild(avatar);
-  wrap.appendChild(body);
-
-  box.appendChild(wrap);
-  box.scrollTop = box.scrollHeight;
-}
-
-function getTime() {
-  const d = new Date();
-  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-}
-
-// ======================
-// المتواجدين
-// ======================
-function openUsers() {
-  const panel = $("usersPanel");
-  const overlay = $("overlay");
-  if (!panel) return;
-  panel.classList.add("open");
-  if (overlay) overlay.classList.add("show");
-}
-function closeUsers() {
-  const panel = $("usersPanel");
-  const overlay = $("overlay");
-  if (panel) panel.classList.remove("open");
-  closeOverlayIfNoPopup();
-  if (overlay && !overlayShouldShow()) overlay.classList.remove("show");
-}
-
-socket.on("online_users", (users) => {
-  const list = $("usersList");
-  if (!list) return;
-  list.innerHTML = "";
-  users.forEach((user) => {
-    const item = document.createElement("div");
-    item.className = "user-item";
-    item.addEventListener("click", () => showUser(user.username));
-    const img = document.createElement("div");
-    img.className = "user-image";
-    img.textContent = "👤";
-    const name = document.createElement("div");
-    name.textContent = user.username;
-    item.appendChild(img);
-    item.appendChild(name);
-    list.appendChild(item);
-  });
-});
-
-// ======================
-// بوكس المستخدم
-// ======================
-function showUser(name) {
-  selectedUser = name;
-  const popup = $("userPopup");
-  if (!popup) return;
-  const nameEl = $("popupName");
-  const infoEl = $("popupInfo");
-  if (nameEl) nameEl.textContent = name;
-  if (infoEl) infoEl.textContent = "20 سنة ذكر 🇾🇪";
-  popup.style.display = "block";
-  const overlay = $("overlay");
-  if (overlay) overlay.classList.add("show");
-
-  // إظهار زر الأمر حسب الرتبة
-  const cmdBtn = $("commandBtn");
-  if (rank === "owner" || rank === "superadmin" || rank === "admin" || rank === "moderator") {
-    if (cmdBtn) cmdBtn.style.display = "block";
-  } else {
-    if (cmdBtn) cmdBtn.style.display = "none";
-  }
-}
-
-// إغلاق البوكس عند النقر خارجه
-document.addEventListener("click", (e) => {
-  const popup = $("userPopup");
-  if (!popup || popup.style.display !== "block") return;
-  if (popup.contains(e.target)) return;
-  if (e.target.closest(".username")) return;
-  if (e.target.closest(".user-item")) return;
-  popup.style.display = "none";
-  closeOverlayIfNoPopup();
-});
-
-function overlayShouldShow() {
-  const popup = $("userPopup");
-  const cmd = $("commandBox");
-  const panel = $("usersPanel");
-  return (popup && popup.style.display === "block")
-      || (cmd && cmd.style.display === "block")
-      || (panel && panel.classList.contains("open"));
-}
-function closeOverlayIfNoPopup() {
-  const overlay = $("overlay");
-  if (overlay && !overlayShouldShow()) overlay.classList.remove("show");
-}
-
-function closeAllPopups() {
-  const popup = $("userPopup");
-  const cmd = $("commandBox");
-  const panel = $("usersPanel");
-  if (popup) popup.style.display = "none";
-  if (cmd) cmd.style.display = "none";
-  if (panel) panel.classList.remove("open");
-  const overlay = $("overlay");
-  if (overlay) overlay.classList.remove("show");
-}
-
-// الملف الشخصي
-function openProfile() {
-  location.href = "profile.html?user=" + encodeURIComponent(selectedUser);
-}
-// الخاص
-function openPrivate() {
-  location.href = "private.html?user=" + encodeURIComponent(selectedUser);
-}
-// فتح الأوامر
-function showCommands() {
-  const popup = $("userPopup");
-  const cmdBox = $("commandBox");
-  if (popup) popup.style.display = "none";
-  if (cmdBox) cmdBox.style.display = "block";
-  const cmdName = $("popupCommandName");
-  if (cmdName) cmdName.textContent = "على: " + selectedUser;
-}
-
-// =============================
-// أوامر الإدارة
-// =============================
-async function adminRequest(url, body = {}) {
-  const token = localStorage.getItem("token");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer " + token
-    },
-    body: JSON.stringify(body)
-  });
-  return await response.json();
-}
-
-// 🔇 كتم
-async function muteUser() {
-  const result = await adminRequest("/api/admin/mute", { userId: selectedUser, minutes: 5 });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// 🚪 طرد
-async function kickUser() {
-  const result = await adminRequest("/api/admin/kick", { userId: selectedUser });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// 🗑 حذف رسالة
-async function deleteMessage() {
-  const result = await adminRequest("/api/admin/delete-message", { userId: selectedUser });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// ✏️ تعديل الاسم
-async function renameUser() {
-  const newName = prompt("اكتب الاسم الجديد");
-  if (!newName) return;
-  const result = await adminRequest("/api/admin/rename", { userId: selectedUser, newName });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// 🚫 حظر
-async function banUser() {
-  const result = await adminRequest("/api/admin/ban", { userId: selectedUser });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// 📝 سجل العضو
-async function historyUser() {
-  const token = localStorage.getItem("token");
-  const response = await fetch("/api/admin/history/" + encodeURIComponent(selectedUser), {
-    headers: { "Authorization": "Bearer " + token }
-  });
-  const data = await response.json();
-  alert(JSON.stringify(data));
-}
-// 🗑 حذف عضوية (المالك)
-async function deleteUser() {
-  if (!confirm("هل تريد حذف العضوية؟")) return;
-  const token = localStorage.getItem("token");
-  const response = await fetch("/api/admin/delete-user/" + encodeURIComponent(selectedUser), {
-    method: "DELETE",
-    headers: { "Authorization": "Bearer " + token }
-  });
-  const data = await response.json();
-  alert(data.message || data.error);
-  closeCommands();
-}
-// ⬆️⬇️ تغيير الرتبة
-async function changeRank() {
-  const newRank = prompt("اكتب الرتبة الجديدة\nowner/admin/moderator/member");
-  if (!newRank) return;
-  const result = await adminRequest("/api/admin/rank", { userId: selectedUser, rank: newRank });
-  alert(result.message || result.error);
-  closeCommands();
-}
-// إغلاق نافذة الأوامر
-function closeCommands() {
-  const cmdBox = $("commandBox");
-  if (cmdBox) cmdBox.style.display = "none";
-  closeOverlayIfNoPopup();
-}
-
-// إخفاء أوامر المالك لغير المالك
-if (rank !== "owner") {
-  const oc = $("ownerCommands");
-  if (oc) oc.style.display = "none";
-}
-</script>
 </body>
 </html>

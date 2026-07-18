@@ -6,9 +6,11 @@
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width,initial-scale=1.0">
+content="width=device-width, initial-scale=1.0">
 
 <title>شات اليمن المطور</title>
+
+<link rel="stylesheet" href="css/chat.css">
 
 <link rel="preconnect"
 href="https://fonts.googleapis.com">
@@ -22,565 +24,159 @@ rel="stylesheet">
 
 <script src="/socket.io/socket.io.js"></script>
 
-<style>
-
-*{
-
-margin:0;
-
-padding:0;
-
-box-sizing:border-box;
-
-font-family:'Tajawal',sans-serif;
-
-}
-
-body{
-
-background:#ece5dd;
-
-height:100vh;
-
-overflow:hidden;
-
-}
-
-/*==========================
-الشريط العلوي
-==========================*/
-
-.header{
-
-height:65px;
-
-background:#075E54;
-
-color:#fff;
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-padding:0 12px;
-
-box-shadow:0 2px 5px rgba(0,0,0,.2);
-
-}
-
-.title{
-
-font-size:22px;
-
-font-weight:bold;
-
-}
-
-.top-icons{
-
-display:flex;
-
-gap:18px;
-
-font-size:22px;
-
-cursor:pointer;
-
-align-items:center;
-
-}
-
-.top-icons span{
-
-transition:.2s;
-
-}
-
-.top-icons span:hover{
-
-transform:scale(1.15);
-
-}
-
-/*==========================
-منطقة الرسائل
-==========================*/
-
-.messages{
-
-height:calc(100vh - 140px);
-
-overflow-y:auto;
-
-padding:15px;
-
-background:#d9dbd5;
-
-}
-
-.message{
-
-background:#fff;
-
-padding:12px;
-
-border-radius:12px;
-
-margin-bottom:15px;
-
-display:flex;
-
-gap:10px;
-
-box-shadow:0 2px 4px rgba(0,0,0,.08);
-
-}
-
-.avatar{
-
-width:48px;
-
-height:48px;
-
-border-radius:50%;
-
-background:#ddd;
-
-object-fit:cover;
-
-}
-
-.message-body{
-
-flex:1;
-
-}
-
-.username{
-
-font-weight:bold;
-
-color:#075E54;
-
-margin-bottom:5px;
-
-}
-
-.text{
-
-font-size:15px;
-
-line-height:1.6;
-
-}
-
-.time{
-
-margin-top:6px;
-
-font-size:12px;
-
-color:#777;
-
-}
-
-.system{
-
-background:#fff3cd;
-
-color:#856404;
-
-padding:10px;
-
-border-radius:10px;
-
-margin-bottom:12px;
-
-text-align:center;
-
-font-size:14px;
-
-}
-
-/*==========================
-شريط الكتابة
-==========================*/
-
-.input-bar{
-
-height:70px;
-
-background:#f7f7f7;
-
-display:flex;
-
-align-items:center;
-
-padding:10px;
-
-gap:10px;
-
-border-top:1px solid #ddd;
-
-}
-
-.input-bar input{
-
-flex:1;
-
-border:none;
-
-background:#fff;
-
-padding:12px;
-
-border-radius:25px;
-
-font-size:15px;
-
-outline:none;
-
-}
-
-.input-btn{
-
-font-size:25px;
-
-cursor:pointer;
-
-}
-
-/*==========================
-الشريط السفلي
-==========================*/
-
-.bottom-bar{
-
-height:65px;
-
-background:#075E54;
-
-color:#fff;
-
-display:flex;
-
-justify-content:space-around;
-
-align-items:center;
-
-font-size:24px;
-
-}
-
-.bottom-item{
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-font-size:12px;
-
-cursor:pointer;
-
-}
-
-.bottom-item span{
-
-font-size:23px;
-
-margin-bottom:2px;
-
-}
-
-</style>
-
 </head>
 
 <body>
 
-<!--========================
-الشريط العلوي
-=========================-->
+<!-- ========================= -->
+<!-- الشريط العلوي -->
+<!-- ========================= -->
 
-<div class="header">
+<header class="topbar">
 
-<div class="title">
+<div class="logo">
 
 💬 شات اليمن المطور
 
 </div>
 
-<div class="top-icons">
+<div class="top-actions">
 
-<span title="الملف الشخصي">👤</span>
+<button id="profileBtn">👤</button>
 
-<span title="الإشعارات">📭</span>
+<button id="notifyBtn">📭</button>
 
-<span title="الإعجابات">❤️</span>
+<button id="likesBtn">❤️</button>
 
-<span title="دعوة">➕</span>
+<button id="inviteBtn">➕</button>
 
-<span title="الرسائل الخاصة">✉️</span>
+<button id="privateBtn">✉️</button>
 
-<span title="المتجر">🛒</span>
+<button id="storeBtn">🛒</button>
 
-<span title="القائمة">☰</span>
-
-</div>
+<button id="menuBtn">☰</button>
 
 </div>
 
-<!--========================
-منطقة الرسائل
-=========================-->
+</header>
 
-<div id="messages" class="messages">
-<!-- رسالة -->
+<!-- ========================= -->
+<!-- الرسائل -->
+<!-- ========================= -->
 
-<div class="message">
+<main id="messages" class="messages">
 
-<img
-class="avatar"
-src="/images/default-avatar.png">
+<!-- الرسائل ستضاف هنا بواسطة chat.js -->
 
-<div class="message-body">
+</main>
 
-<div class="username">
+<!-- ========================= -->
+<!-- رسائل النظام -->
+<!-- ========================= -->
 
-💎 أحمد اليمني
+<div id="systemMessage" class="system-message" style="display:none;"></div>
 
-</div>
+<!-- ========================= -->
+<!-- شريط الكتابة -->
+<!-- ========================= -->
 
-<div class="text">
+<footer class="chat-input">
 
-السلام عليكم ورحمة الله وبركاته 🌹
+<button id="uploadBtn">➕</button>
 
-</div>
-
-<div class="time">
-
-17:15 | 16/05/2026
-
-</div>
-
-</div>
-
-</div>
-
-<!-- رسالة -->
-
-<div class="message">
-
-<img
-class="avatar"
-src="/images/default-avatar.png">
-
-<div class="message-body">
-
-<div class="username">
-
-👤 محمد
-
-</div>
-
-<div class="text">
-
-وعليكم السلام ورحمة الله
-
-</div>
-
-<div class="time">
-
-17:16 | 16/05/2026
-
-</div>
-
-</div>
-
-</div>
-
-<!-- رسالة نظام -->
-
-<div class="system">
-
-💎 هذا المستخدم يحمل رتبة مميز
-
-</div>
-
-<!-- رسالة -->
-
-<div class="message">
-
-<img
-class="avatar"
-src="/images/default-avatar.png">
-
-<div class="message-body">
-
-<div class="username">
-
-🛡 خالد
-
-</div>
-
-<div class="text">
-
-أهلاً وسهلاً بالجميع
-
-</div>
-
-<div class="time">
-
-17:18 | 16/05/2026
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ===========================
-شريط الكتابة
-=========================== -->
-
-<div class="input-bar">
-
-<div class="input-btn"
-
-onclick="openUpload()">
-
-➕
-
-</div>
-
-<div class="input-btn"
-
-onclick="openEmoji()">
-
-😊
-
-</div>
+<button id="emojiBtn">😊</button>
 
 <input
-
 id="messageInput"
-
 type="text"
-
 placeholder="اكتب هنا...">
 
-<div class="input-btn"
+<button id="voiceBtn">🎤</button>
 
-onclick="recordVoice()">
+<button id="sendBtn">➤</button>
 
-🎤
+</footer>
 
-</div>
+<!-- ========================= -->
+<!-- الشريط السفلي -->
+<!-- ========================= -->
 
-<div class="input-btn"
+<nav class="bottom-bar">
 
-onclick="sendMessage()">
-
-➤
-
-</div>
-
-</div>
-
-<!-- ===========================
-الشريط السفلي
-=========================== -->
-
-<div class="bottom-bar">
-
-<div class="bottom-item"
-
-onclick="openUsers()">
-
-<span>
+<button id="usersBtn">
 
 👥
 
-</span>
+<span>المتواجدون</span>
 
-المتواجدون
+</button>
 
-</div>
-
-<div class="bottom-item"
-
-onclick="goHome()">
-
-<span>
+<button id="homeBtn">
 
 🏠
 
-</span>
+<span>الرئيسية</span>
 
-الرئيسية
+</button>
 
-</div>
-
-<div class="bottom-item"
-
-onclick="openSettings()">
-
-<span>
+<button id="settingsBtn">
 
 ⚙️
 
-</span>
+<span>الإعدادات</span>
 
-الإعدادات
+</button>
 
-</div>
-
-<div class="bottom-item"
-
-onclick="openRooms()">
-
-<span>
+<button id="roomsBtn">
 
 🌎
 
-</span>
+<span>الغرف</span>
 
-العامة
+</button>
 
-</div>
-
-<div class="bottom-item"
-
-onclick="toggleSound()">
-
-<span>
+<button id="soundBtn">
 
 🔊
 
-</span>
+<span>الصوت</span>
 
-الصوت
+</button>
 
-</div>
-
-<div class="bottom-item"
-
-onclick="toggleRadio()">
-
-<span>
+<button id="radioBtn">
 
 ▶️
 
-</span>
+<span>الراديو</span>
 
-الراديو
+</button>
 
-</div>
+</nav>
 
-</div>
+<!-- ========================= -->
+<!-- النوافذ المنبثقة -->
+<!-- ========================= -->
+
+<div id="profileModal" class="modal"></div>
+
+<div id="notificationsModal" class="modal"></div>
+
+<div id="friendsModal" class="modal"></div>
+
+<div id="usersModal" class="modal"></div>
+
+<div id="emojiModal" class="modal"></div>
+
+<div id="storeModal" class="modal"></div>
+
+<div id="roomsModal" class="modal"></div>
+
+<div id="privateModal" class="modal"></div>
+
+<div id="settingsModal" class="modal"></div>
+
+<script src="js/chat.js"></script>
+
+</body>
+
+</html>

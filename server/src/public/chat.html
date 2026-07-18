@@ -1,1535 +1,648 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>شات اليمن المطور</title>
-
 <script src="/socket.io/socket.io.js"></script>
-
-
 <style>
-
-*{
-box-sizing:border-box;
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Tajawal, Tahoma, Arial;
+  background: #f3f3f3;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
-
-
-body{
-
-margin:0;
-font-family:Tajawal,Tahoma,Arial;
-background:#f3f3f3;
-height:100vh;
-display:flex;
-flex-direction:column;
-
+.top-bar {
+  height: 60px;
+  background: #222;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
 }
-
-
-
-/* الشريط العلوي */
-
-.top-bar{
-
-height:60px;
-background:#222;
-color:white;
-
-display:flex;
-align-items:center;
-justify-content:space-between;
-
-padding:0 12px;
-
+.site-name { font-size: 18px; font-weight: bold; }
+.top-icons { display: flex; gap: 12px; }
+.icon { font-size: 23px; cursor: pointer; user-select: none; }
+.room-header {
+  background: white;
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+  flex-shrink: 0;
 }
-
-
-
-.site-name{
-
-font-size:18px;
-font-weight:bold;
-
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
 }
-
-
-
-.top-icons{
-
-display:flex;
-gap:12px;
-
+.message {
+  display: flex;
+  gap: 10px;
+  background: white;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 12px;
 }
-
-
-
-.icon{
-
-font-size:23px;
-cursor:pointer;
-
+.avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
 }
-
-
-
-
-/* الغرفة */
-
-
-.room-header{
-
-background:white;
-
-padding:10px;
-
-text-align:center;
-
-border-bottom:1px solid #ddd;
-
-font-weight:bold;
-
+.username { font-weight: bold; cursor: pointer; }
+.time { font-size: 12px; color: #777; }
+.system-message {
+  text-align: center;
+  color: #555;
+  padding: 10px;
+  font-size: 13px;
 }
-
-
-
-
-/* الرسائل */
-
-
-.messages{
-
-flex:1;
-
-overflow-y:auto;
-
-padding:10px;
-
+.input-bar {
+  height: 60px;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  flex-shrink: 0;
 }
-
-
-
-.message{
-
-display:flex;
-
-gap:10px;
-
-background:white;
-
-padding:10px;
-
-margin-bottom:10px;
-
-border-radius:12px;
-
+.input-bar input {
+  flex: 1;
+  height: 42px;
+  border: 0;
+  border-radius: 20px;
+  padding: 10px;
+  outline: none;
+  font-family: inherit;
 }
-
-
-
-.avatar{
-
-width:45px;
-
-height:45px;
-
-border-radius:50%;
-
-background:#ddd;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
+.send-btn {
+  font-size: 22px;
+  cursor: pointer;
+  background: #28a745;
+  color: white;
+  border: 0;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-
-
-.username{
-
-font-weight:bold;
-
-cursor:pointer;
-
+.send-btn:hover { background: #1e7e34; }
+.bottom-bar {
+  height: 55px;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid #ddd;
+  flex-shrink: 0;
 }
-
-
-
-.time{
-
-font-size:12px;
-
-color:#777;
-
+.tab-item { cursor: pointer; color: #555; font-size: 14px; }
+.users-panel {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  height: 100%;
+  background: white;
+  z-index: 30;
+  transition: 0.3s;
+  box-shadow: 0 0 10px #777;
+  overflow-y: auto;
 }
-
-
-
-
-
-.system-message{
-
-text-align:center;
-
-color:#555;
-
-padding:10px;
-
+.users-panel.open { right: 0; }
+.users-header {
+  background: #222;
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-
-
-
-
-
-/* الكتابة */
-
-
-.input-bar{
-
-height:60px;
-
-background:#ddd;
-
-display:flex;
-
-align-items:center;
-
-gap:8px;
-
-padding:8px;
-
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
 }
-
-
-
-.input-bar input{
-
-flex:1;
-
-height:42px;
-
-border:0;
-
-border-radius:20px;
-
-padding:10px;
-
+.user-item:hover { background: #f5f5f5; }
+.user-image {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
 }
-
-
-
-.send-btn{
-
-font-size:25px;
-
-cursor:pointer;
-
+.user-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  display: none;
+  z-index: 50;
+  box-shadow: 0 0 15px #555;
+  text-align: center;
 }
-
-
-
-
-
-/* الشريط السفلي */
-
-
-.bottom-bar{
-
-height:55px;
-
-background:white;
-
-display:flex;
-
-justify-content:space-around;
-
-align-items:center;
-
-border-top:1px solid #ddd;
-
+.popup-image {
+  width: 80px;
+  height: 80px;
+  background: #ddd;
+  border-radius: 50%;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
 }
-
-
-
-
-
-/* المتواجدين */
-
-
-.users-panel{
-
-position:fixed;
-
-top:0;
-
-right:-320px;
-
-width:300px;
-
-height:100%;
-
-background:white;
-
-z-index:30;
-
-transition:.3s;
-
-box-shadow:0 0 10px #777;
-
+.user-popup button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #eee;
+  font-size: 14px;
+  font-family: inherit;
 }
-
-
-
-.users-panel.open{
-
-right:0;
-
+.user-popup button:hover { background: #ddd; }
+.user-popup button.primary { background: #28a745; color: white; }
+.user-popup button.danger { background: #c44; color: white; }
+#commandBox {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  z-index: 60;
+  box-shadow: 0 0 15px #555;
+  max-height: 80vh;
+  overflow-y: auto;
 }
-
-
-
-.users-header{
-
-background:#222;
-
-color:white;
-
-padding:15px;
-
-display:flex;
-
-justify-content:space-between;
-
+.command-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
 }
-
-
-
-.user-item{
-
-display:flex;
-
-align-items:center;
-
-gap:10px;
-
-padding:12px;
-
-border-bottom:1px solid #ddd;
-
-cursor:pointer;
-
+.command-section {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f7f7f7;
+  border-radius: 8px;
 }
-
-
-
-.user-image{
-
-width:45px;
-
-height:45px;
-
-border-radius:50%;
-
-background:#ddd;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
+.command-section-title {
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: #555;
 }
-
-
-
-
-/* بوكس المستخدم */
-
-
-.user-popup{
-
-position:fixed;
-
-top:50%;
-
-left:50%;
-
-transform:translate(-50%,-50%);
-
-width:280px;
-
-background:white;
-
-border-radius:15px;
-
-padding:20px;
-
-display:none;
-
-z-index:50;
-
-box-shadow:0 0 15px #555;
-
-text-align:center;
-
+.command-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
-
-
-
-.popup-image{
-
-width:80px;
-
-height:80px;
-
-background:#ddd;
-
-border-radius:50%;
-
-margin:auto;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:40px;
-
+.command-grid button {
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #eee;
+  font-size: 13px;
+  font-family: inherit;
 }
-
-
-
-.user-popup button{
-
-width:100%;
-
-padding:10px;
-
-margin-top:8px;
-
-border:0;
-
-border-radius:10px;
-
-cursor:pointer;
-
+.command-grid button:hover { background: #ddd; }
+.command-grid button.danger { background: #c44; color: white; }
+.command-grid button.primary { background: #28a745; color: white; }
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 45;
 }
-
-
-
-
-/* نافذة الأمر */
-
-
-#commandBox{
-
-display:none;
-
-}
-
-
-
-.command-title{
-
-font-size:20px;
-
-font-weight:bold;
-
-margin-bottom:10px;
-
-}
-
-
+.overlay.show { display: block; }
 </style>
-
 </head>
-
-
-
 <body>
 
-
 <!-- الشريط العلوي -->
-
 <div class="top-bar">
-
-
-<div class="site-name">
-
-شات اليمن المطور
-
+  <div class="site-name">شات اليمن المطور</div>
+  <div class="top-icons">
+    <span class="icon">☰</span>
+    <span class="icon">🛒</span>
+    <span class="icon">✉️</span>
+    <span class="icon" onclick="openUsers()">👥</span>
+    <span class="icon">❤️</span>
+    <span class="icon">📭</span>
+    <span class="icon">👤</span>
+  </div>
 </div>
 
+<div class="room-header" id="roomHeader">غرفة الدردشة</div>
 
+<!-- الرسائل -->
+<div class="messages" id="messages"></div>
 
-<div class="top-icons">
+<!-- الكتابة -->
+<div class="input-bar">
+  <input type="text" id="messageInput" placeholder="اكتب رسالتك..." onkeydown="if(event.key==='Enter')sendMessage()">
+  <button class="send-btn" onclick="sendMessage()">➤</button>
+</div>
 
+<!-- الشريط السفلي -->
+<div class="bottom-bar">
+  <span class="tab-item">💬 محادثات</span>
+  <span class="tab-item">👥 أصدقاء</span>
+  <span class="tab-item">⚙️ إعدادات</span>
+</div>
 
-<span class="icon">☰</span>
+<!-- المتواجدين -->
+<div class="users-panel" id="usersPanel">
+  <div class="users-header">
+    <span>المتواجدون الآن</span>
+    <span style="cursor:pointer" onclick="closeUsers()">✕</span>
+  </div>
+  <div id="usersList"></div>
+</div>
 
-<span class="icon">🛒</span>
+<!-- بوكس المستخدم -->
+<div class="user-popup" id="userPopup">
+  <div class="popup-image">👤</div>
+  <div id="popupName" style="font-weight:bold; font-size:18px; margin-top:10px;"></div>
+  <div id="popupInfo" style="color:#777; margin-bottom:12px;">20 سنة ذكر 🇾🇪</div>
+  <button class="primary" onclick="openProfile()">الملف الشخصي</button>
+  <button onclick="openPrivate()">رسالة خاصة</button>
+  <button id="commandBtn" style="display:none;" onclick="showCommands()">⚙️ أوامر إدارية</button>
+  <button onclick="document.getElementById('userPopup').style.display='none'">إغلاق</button>
+</div>
 
-<span class="icon">✉️</span>
+<!-- خلفية النوافذ -->
+<div class="overlay" id="overlay" onclick="closeAllPopups()"></div>
 
+<!-- نافذة الأوامر -->
+<div id="commandBox">
+  <div class="command-title">⚙️ أوامر إدارة</div>
+  <div id="popupCommandName" style="text-align:center; color:#777; margin-bottom:12px;"></div>
 
-<span class="icon"
-onclick="openUsers()">
+  <div class="command-section">
+    <div class="command-section-title">إجراءات عامة</div>
+    <div class="command-grid">
+      <button onclick="muteUser()">🔇 كتم (5د)</button>
+      <button onclick="kickUser()">🚪 طرد</button>
+      <button class="danger" onclick="banUser()">🚫 حظر</button>
+      <button class="danger" onclick="deleteMessage()">🗑 حذف رسالة</button>
+    </div>
+  </div>
 
-👥
+  <div class="command-section">
+    <div class="command-section-title">تعديل البيانات</div>
+    <div class="command-grid">
+      <button onclick="renameUser()">✏️ تعديل الاسم</button>
+      <button onclick="changeRank()">⬆️ تغيير الرتبة</button>
+      <button onclick="historyUser()">📝 سجل العضو</button>
+    </div>
+  </div>
 
-</span>
+  <div class="command-section" id="ownerCommands">
+    <div class="command-section-title">أوامر المالك</div>
+    <div class="command-grid">
+      <button class="danger" onclick="deleteUser()">🗑 حذف العضوية</button>
+    </div>
+  </div>
 
+  <button onclick="closeCommands()" style="width:100%; margin-top:10px; padding:10px; border:0; border-radius:10px; background:#eee; cursor:pointer; font-family:inherit;">إغلاق</button>
+</div>
 
-<span class="icon">❤️</span>
-
-<span class="icon">📭</span>
-
-
-<span class="icon">👤</span>
 <script>
-
-
 const socket = io();
-
-
-
-const username =
-localStorage.getItem("username")
-||
-"زائر";
-
-
-const room =
-localStorage.getItem("room_id")
-||
-1;
-
-
-
-const rank =
-localStorage.getItem("rank")
-||
-"guest";
-
-
-
+const username = localStorage.getItem("username") || "زائر";
+const room = localStorage.getItem("room_id") || 1;
+const rank = localStorage.getItem("rank") || "guest";
 let selectedUser = "";
-
 let selectedUserId = "";
 
+// مساعد: تهريب النص لمنع XSS
+function esc(s) {
+  if (s == null) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
-
-
+function $(id) { return document.getElementById(id); }
 
 // دخول الغرفة
+socket.emit("join_room", { room, username });
 
-socket.emit(
-"join_room",
-{
-
-room,
-
-username
-
-}
-
-);
-
-
-
-
-
+// تحديث عنوان الغرفة
+const headerEl = $("roomHeader");
+if (headerEl) headerEl.textContent = "غرفة رقم " + room;
 
 // استقبال الرسائل العامة
-
-socket.on(
-"receive_message",
-(data)=>{
-
-
-addMessage(
-data.username,
-data.message,
-data.time
-);
-
-
+socket.on("receive_message", (data) => {
+  addMessage(data.username, data.message, data.time);
 });
-
-
-
-
-
 
 // رسائل النظام
-
-socket.on(
-"system_message",
-(msg)=>{
-
-
-let box =
-document.getElementById(
-"messages"
-);
-
-
-
-box.innerHTML +=
-
-`
-
-<div class="system-message">
-
-[ ${msg} ]
-
-</div>
-
-`;
-
-
-
-box.scrollTop =
-box.scrollHeight;
-
-
+socket.on("system_message", (msg) => {
+  const box = $("messages");
+  if (!box) return;
+  const div = document.createElement("div");
+  div.className = "system-message";
+  div.textContent = "[ " + msg + " ]";
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
 });
 
-
-
-
-
-
-
-
 // إرسال رسالة
-
-function sendMessage(){
-
-
-let input =
-document.getElementById(
-"messageInput"
-);
-
-
-
-let message =
-input.value.trim();
-
-
-
-if(!message)
-return;
-
-
-
-socket.emit(
-"send_message",
-{
-
-room,
-
-username,
-
-message
-
+function sendMessage() {
+  const input = $("messageInput");
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) return;
+  socket.emit("send_message", { room, username, message });
+  input.value = "";
 }
 
-);
+// عرض الرسالة (باستخدام DOM الآمن بدلاً من innerHTML)
+function addMessage(name, text, time) {
+  const box = $("messages");
+  if (!box) return;
 
+  const wrap = document.createElement("div");
+  wrap.className = "message";
 
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = "👤";
 
-input.value="";
+  const body = document.createElement("div");
+  body.style.flex = "1";
+  body.style.minWidth = "0";
 
+  const nameEl = document.createElement("div");
+  nameEl.className = "username";
+  nameEl.textContent = name;
+  nameEl.addEventListener("click", () => showUser(name));
 
+  const textEl = document.createElement("div");
+  textEl.textContent = text;
+  textEl.style.wordBreak = "break-word";
+
+  const timeEl = document.createElement("div");
+  timeEl.className = "time";
+  timeEl.textContent = time || getTime();
+
+  body.appendChild(nameEl);
+  body.appendChild(textEl);
+  body.appendChild(timeEl);
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(body);
+
+  box.appendChild(wrap);
+  box.scrollTop = box.scrollHeight;
 }
 
-
-
-
-
-
-
-// عرض الرسالة
-
-
-function addMessage(
-name,
-text,
-time
-){
-
-
-let box =
-document.getElementById(
-"messages"
-);
-
-
-
-box.innerHTML +=
-
-`
-
-<div class="message">
-
-
-<div class="avatar">
-
-👤
-
-</div>
-
-
-<div>
-
-
-<div class="username"
-onclick="showUser('${name}')">
-
-${name}
-
-</div>
-
-
-
-<div>
-
-${text}
-
-</div>
-
-
-
-<div class="time">
-
-${time || getTime()}
-
-</div>
-
-
-</div>
-
-
-
-</div>
-
-
-`;
-
-
-
-box.scrollTop =
-box.scrollHeight;
-
-
+function getTime() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
 }
-
-
-
-
-
-
-function getTime(){
-
-
-let d=new Date();
-
-
-return (
-
-String(d.getHours())
-.padStart(2,"0")
-
-+
-
-":"
-
-+
-
-String(d.getMinutes())
-.padStart(2,"0")
-
-);
-
-
-}
-
-
-
-
-
-
-
-
 
 // ======================
 // المتواجدين
 // ======================
-
-
-function openUsers(){
-
-
-document
-.getElementById(
-"usersPanel"
-)
-.classList.add("open");
-
-
+function openUsers() {
+  const panel = $("usersPanel");
+  const overlay = $("overlay");
+  if (!panel) return;
+  panel.classList.add("open");
+  if (overlay) overlay.classList.add("show");
+}
+function closeUsers() {
+  const panel = $("usersPanel");
+  const overlay = $("overlay");
+  if (panel) panel.classList.remove("open");
+  closeOverlayIfNoPopup();
+  if (overlay && !overlayShouldShow()) overlay.classList.remove("show");
 }
 
-
-
-function closeUsers(){
-
-
-document
-.getElementById(
-"usersPanel"
-)
-.classList.remove("open");
-
-
-}
-
-
-
-
-
-
-
-socket.on(
-"online_users",
-(users)=>{
-
-
-let list =
-document.getElementById(
-"usersList"
-);
-
-
-
-list.innerHTML="";
-
-
-
-users.forEach(
-(user)=>{
-
-
-list.innerHTML +=
-
-
-`
-
-<div class="user-item"
-onclick="showUser('${user.username}')">
-
-
-<div class="user-image">
-
-👤
-
-</div>
-
-
-
-<div>
-
-${user.username}
-
-</div>
-
-
-
-</div>
-
-
-`;
-
-
-
+socket.on("online_users", (users) => {
+  const list = $("usersList");
+  if (!list) return;
+  list.innerHTML = "";
+  users.forEach((user) => {
+    const item = document.createElement("div");
+    item.className = "user-item";
+    item.addEventListener("click", () => showUser(user.username));
+    const img = document.createElement("div");
+    img.className = "user-image";
+    img.textContent = "👤";
+    const name = document.createElement("div");
+    name.textContent = user.username;
+    item.appendChild(img);
+    item.appendChild(name);
+    list.appendChild(item);
+  });
 });
-
-
-
-});
-
-
-
-
-
-
-
-
 
 // ======================
 // بوكس المستخدم
 // ======================
+function showUser(name) {
+  selectedUser = name;
+  const popup = $("userPopup");
+  if (!popup) return;
+  const nameEl = $("popupName");
+  const infoEl = $("popupInfo");
+  if (nameEl) nameEl.textContent = name;
+  if (infoEl) infoEl.textContent = "20 سنة ذكر 🇾🇪";
+  popup.style.display = "block";
+  const overlay = $("overlay");
+  if (overlay) overlay.classList.add("show");
 
-
-function showUser(name){
-
-
-selectedUser=name;
-
-
-
-document.getElementById(
-"userPopup"
-)
-.style.display="block";
-
-
-
-document.getElementById(
-"popupName"
-)
-.innerHTML=name;
-
-
-
-document.getElementById(
-"popupInfo"
-)
-.innerHTML=
-
-"20 سنة ذكر 🇾🇪";
-
-
-
-
-
-// إظهار زر الأمر حسب الرتبة
-
-
-if(
-
-rank==="owner"
-
-||
-
-rank==="superadmin"
-
-||
-
-rank==="admin"
-
-||
-
-rank==="moderator"
-
-){
-
-
-document.getElementById(
-"commandBtn"
-)
-.style.display="block";
-
-
-}
-else{
-
-
-document.getElementById(
-"commandBtn"
-)
-.style.display="none";
-
-
+  // إظهار زر الأمر حسب الرتبة
+  const cmdBtn = $("commandBtn");
+  if (rank === "owner" || rank === "superadmin" || rank === "admin" || rank === "moderator") {
+    if (cmdBtn) cmdBtn.style.display = "block";
+  } else {
+    if (cmdBtn) cmdBtn.style.display = "none";
+  }
 }
 
-
-
-}
-
-
-
-
-
-// إغلاق البوكس
-
-
-document.addEventListener(
-"click",
-(e)=>{
-
-
-let popup =
-document.getElementById(
-"userPopup"
-);
-
-
-
-if(
-
-popup.style.display==="block"
-
-&&
-
-!popup.contains(e.target)
-
-&&
-
-!e.target.classList.contains("username")
-
-){
-
-
-popup.style.display="none";
-
-
-}
-
-
-
+// إغلاق البوكس عند النقر خارجه
+document.addEventListener("click", (e) => {
+  const popup = $("userPopup");
+  if (!popup || popup.style.display !== "block") return;
+  if (popup.contains(e.target)) return;
+  if (e.target.closest(".username")) return;
+  if (e.target.closest(".user-item")) return;
+  popup.style.display = "none";
+  closeOverlayIfNoPopup();
 });
 
+function overlayShouldShow() {
+  const popup = $("userPopup");
+  const cmd = $("commandBox");
+  const panel = $("usersPanel");
+  return (popup && popup.style.display === "block")
+      || (cmd && cmd.style.display === "block")
+      || (panel && panel.classList.contains("open"));
+}
+function closeOverlayIfNoPopup() {
+  const overlay = $("overlay");
+  if (overlay && !overlayShouldShow()) overlay.classList.remove("show");
+}
 
-
-
-
-
+function closeAllPopups() {
+  const popup = $("userPopup");
+  const cmd = $("commandBox");
+  const panel = $("usersPanel");
+  if (popup) popup.style.display = "none";
+  if (cmd) cmd.style.display = "none";
+  if (panel) panel.classList.remove("open");
+  const overlay = $("overlay");
+  if (overlay) overlay.classList.remove("show");
+}
 
 // الملف الشخصي
-
-
-function openProfile(){
-
-
-location.href=
-
-"profile.html?user="+selectedUser;
-
-
+function openProfile() {
+  location.href = "profile.html?user=" + encodeURIComponent(selectedUser);
 }
-
-
-
-
-
 // الخاص
-
-
-function openPrivate(){
-
-
-location.href=
-
-"private.html?user="+selectedUser;
-
-
+function openPrivate() {
+  location.href = "private.html?user=" + encodeURIComponent(selectedUser);
 }
-
-
-
-
-
-
 // فتح الأوامر
-
-
-function showCommands(){
-
-
-document.getElementById(
-"userPopup"
-)
-.style.display="none";
-
-
-
-document.getElementById(
-"commandBox"
-)
-.style.display="block";
-
-
+function showCommands() {
+  const popup = $("userPopup");
+  const cmdBox = $("commandBox");
+  if (popup) popup.style.display = "none";
+  if (cmdBox) cmdBox.style.display = "block";
+  const cmdName = $("popupCommandName");
+  if (cmdName) cmdName.textContent = "على: " + selectedUser;
 }
-
-
-
-
-</script>
-<script>
-
 
 // =============================
 // أوامر الإدارة
 // =============================
-
-
-async function adminRequest(url,body={}){
-
-
-let token =
-localStorage.getItem("token");
-
-
-
-let response =
-await fetch(url,{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json",
-
-"Authorization":
-"Bearer "+token
-
-},
-
-body:JSON.stringify(body)
-
-});
-
-
-
-return await response.json();
-
-
+async function adminRequest(url, body = {}) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify(body)
+  });
+  return await response.json();
 }
-
-
-
-
-
-
 
 // 🔇 كتم
-
-
-async function muteUser(){
-
-
-let result =
-await adminRequest(
-"/api/admin/mute",
-{
-
-userId:selectedUser,
-
-minutes:5
-
+async function muteUser() {
+  const result = await adminRequest("/api/admin/mute", { userId: selectedUser, minutes: 5 });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
 // 🚪 طرد
-
-
-async function kickUser(){
-
-
-let result =
-await adminRequest(
-"/api/admin/kick",
-{
-
-userId:selectedUser
-
+async function kickUser() {
+  const result = await adminRequest("/api/admin/kick", { userId: selectedUser });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
-
 // 🗑 حذف رسالة
-
-
-async function deleteMessage(){
-
-
-let result =
-await adminRequest(
-"/api/admin/delete-message",
-{
-
-userId:selectedUser
-
+async function deleteMessage() {
+  const result = await adminRequest("/api/admin/delete-message", { userId: selectedUser });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
 // ✏️ تعديل الاسم
-
-
-async function renameUser(){
-
-
-let newName =
-prompt(
-"اكتب الاسم الجديد"
-);
-
-
-
-if(!newName)
-return;
-
-
-
-let result =
-await adminRequest(
-"/api/admin/rename",
-{
-
-userId:selectedUser,
-
-newName
-
+async function renameUser() {
+  const newName = prompt("اكتب الاسم الجديد");
+  if (!newName) return;
+  const result = await adminRequest("/api/admin/rename", { userId: selectedUser, newName });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
-
 // 🚫 حظر
-
-
-async function banUser(){
-
-
-let result =
-await adminRequest(
-"/api/admin/ban",
-{
-
-userId:selectedUser
-
+async function banUser() {
+  const result = await adminRequest("/api/admin/ban", { userId: selectedUser });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
 // 📝 سجل العضو
-
-
-async function historyUser(){
-
-
-let token =
-localStorage.getItem("token");
-
-
-
-let response =
-await fetch(
-
-"/api/admin/history/"+selectedUser,
-
-{
-
-headers:{
-
-"Authorization":
-"Bearer "+token
-
+async function historyUser() {
+  const token = localStorage.getItem("token");
+  const response = await fetch("/api/admin/history/" + encodeURIComponent(selectedUser), {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await response.json();
+  alert(JSON.stringify(data));
 }
-
-}
-
-);
-
-
-
-let data =
-await response.json();
-
-
-
-alert(
-JSON.stringify(data)
-);
-
-
-
-}
-
-
-
-
-
-
-
-
-
 // 🗑 حذف عضوية (المالك)
-
-
-async function deleteUser(){
-
-
-if(
-!confirm(
-"هل تريد حذف العضوية؟"
-)
-)
-return;
-
-
-
-let token =
-localStorage.getItem("token");
-
-
-
-let response =
-await fetch(
-
-"/api/admin/delete-user/"+selectedUser,
-
-{
-
-method:"DELETE",
-
-headers:{
-
-"Authorization":
-"Bearer "+token
-
+async function deleteUser() {
+  if (!confirm("هل تريد حذف العضوية؟")) return;
+  const token = localStorage.getItem("token");
+  const response = await fetch("/api/admin/delete-user/" + encodeURIComponent(selectedUser), {
+    method: "DELETE",
+    headers: { "Authorization": "Bearer " + token }
+  });
+  const data = await response.json();
+  alert(data.message || data.error);
+  closeCommands();
 }
-
-}
-
-);
-
-
-
-let data =
-await response.json();
-
-
-
-alert(
-data.message || data.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
-
 // ⬆️⬇️ تغيير الرتبة
-
-
-async function changeRank(){
-
-
-let rank =
-prompt(
-
-"اكتب الرتبة الجديدة\nowner/admin/moderator/member"
-
-);
-
-
-
-if(!rank)
-return;
-
-
-
-
-let result =
-await adminRequest(
-"/api/admin/rank",
-{
-
-userId:selectedUser,
-
-rank
-
+async function changeRank() {
+  const newRank = prompt("اكتب الرتبة الجديدة\nowner/admin/moderator/member");
+  if (!newRank) return;
+  const result = await adminRequest("/api/admin/rank", { userId: selectedUser, rank: newRank });
+  alert(result.message || result.error);
+  closeCommands();
 }
-
-);
-
-
-
-alert(
-result.message || result.error
-);
-
-
-
-closeCommands();
-
-
-}
-
-
-
-
-
-
-
-
-
 // إغلاق نافذة الأوامر
-
-
-function closeCommands(){
-
-
-document.getElementById(
-"commandBox"
-)
-.style.display="none";
-
-
+function closeCommands() {
+  const cmdBox = $("commandBox");
+  if (cmdBox) cmdBox.style.display = "none";
+  closeOverlayIfNoPopup();
 }
-
-
-
-
-
-
-
-
 
 // إخفاء أوامر المالك لغير المالك
-
-
-if(rank!=="owner"){
-
-
-document.getElementById(
-"ownerCommands"
-)
-.style.display="none";
-
-
+if (rank !== "owner") {
+  const oc = $("ownerCommands");
+  if (oc) oc.style.display = "none";
 }
-
-
-
-
 </script>
-
-
-</body>
-
-</html>
 </body>
 </html>
